@@ -182,9 +182,10 @@ void print_wi_indexes (
 		wi_Id_ND, wi_Id_Wg, wg_Id_ND, wg_Size, sg_Range, sg_Id_Wg, sg_Size, wi_Id_sg);
 }
 
-// Q_data points to an array to be loaded to sub_Q
-// sub_Q is submatrix with "use::a" use
-// Hence, Q_data holds the data of a submatrix with "tM x tK" shape
+// Q_data points to an array to be loaded to sub_Q.
+// sub_Q is a submatrix configured as
+// "use::a" (1st matrix mult operand) and "tM x tK" (shape).
+// Hence, Q_data holds the data of the sub_Q submatrix
 void fill_Q (
 	sycl::nd_item<3> item,
 	TA *Q_data
@@ -195,7 +196,7 @@ void fill_Q (
 
 	// Slightly improved multi-threaded implementation
 	// IMPORTANT: this is computed by a sub-group,
-	// and thus, MUST use "sg_Size" instead of "wg_Size"
+	// and thus, the stride MUST be "sg_Size" instead of "wg_Size"
 	for (uint i = wi_Id_sg; i < tM/4; i+=sg_Size) {	// Row counter: how many rows (of 4x4 blocks) are there in the matrix?
 		for (uint j = 0; j < tK/4; j++) {	// Col counter: how many cols (of 4x4 blocks) are there in the matrix?
 			for (uint ii = 0; ii < 4; ii++) {
@@ -212,9 +213,24 @@ void fill_Q (
 	*/
 }
 
+void print_reduced_values (
+	sycl::nd_item<3> item,
+	const char *msg,
+	float *data_to_be_reduced_arranged
+){
+	int wi_Id_Wg = item.get_local_id(2);
+	int wg_Id_ND = item.get_group(2);
+
+	if (wg_Id_ND == 0 && wi_Id_Wg == 0) {
+		sycl::ext::oneapi::experimental::printf("\n%s: \t%5.3f \t%5.3f \t%5.3f \t%5.3f\n", msg,
+			data_to_be_reduced_arranged[0], data_to_be_reduced_arranged[1], data_to_be_reduced_arranged[2], data_to_be_reduced_arranged[3]);
+	}
+}
+
+// Col_major for T_JM_A: is supported in the RTX3050Ti for current matrix shape (16 x 16 x 16) and data type (sycl::half)
 using T_JM_A = joint_matrix<sycl::sub_group, TA, use::a, tM, tK, layout::col_major>;
 using T_JM_B = joint_matrix<sycl::sub_group, TB, use::b, tK, tN, layout::col_major>;
-using T_JM_ACC = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
+using T_JM_C = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
 
 // Implementation based on MSc thesis at KTH:
 // "Accelerating a Molecular Docking Application by Leveraging Modern Heterogeneous Computing Systemx"
@@ -247,10 +263,10 @@ void reduce_via_matrix_units (
 
 		// Declaring and filling submatrices
 		T_JM_B sub_P;
-		T_JM_ACC sub_V;
+		T_JM_C sub_V;
 		T_JM_A sub_Q;
 		T_JM_B sub_W;
-		T_JM_ACC sub_C;
+		T_JM_C sub_C;
 		joint_matrix_fill(sg, sub_P, 1.0f); // P: only ones
 		joint_matrix_fill(sg, sub_V, 0.0f); // Output: initialize to zeros
 		joint_matrix_fill(sg, sub_C, 0.0f); // Final result
