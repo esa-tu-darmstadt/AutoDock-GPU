@@ -723,6 +723,8 @@ void gpu_calc_energrad(
 	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = (sycl::half)(energy);
 	#endif
 
+	//print_submatrix_WG<sycl::half, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
+
 	// 2. Perform reduction using matrix units
 	reduce_via_matrix_units(item_ct1, data_to_be_reduced, Q_data, tmp);
 
@@ -773,6 +775,8 @@ void gpu_calc_energrad(
 	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = (sycl::half)(gy);
 	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = (sycl::half)(gz);
 	#endif
+
+	//print_submatrix_WG<sycl::half, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
 
 	// 2. Perform reduction using matrix units
 	reduce_via_matrix_units(item_ct1, data_to_be_reduced, Q_data, tmp);
