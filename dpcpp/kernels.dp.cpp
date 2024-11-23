@@ -238,10 +238,7 @@ void reduce_via_matrix_units (
 	sycl::half *Q_data,
 	sycl::half *tmp
 ) {
-	int wg_Id_ND = item.get_group(2);
-
 	sycl::sub_group sg = item.get_sub_group();
-	int wi_Id_sg = sg.get_local_id();
 	int sg_Id_Wg = sg.get_group_id().get(0);
 
 	item.barrier(SYCL_MEMORY_SPACE);
@@ -250,26 +247,22 @@ void reduce_via_matrix_units (
 	print_wi_indexes(item);
 	*/
 
-	// Only one sub-group performs reduction
+	// Only a single sub-group per work-group performs reduction
 	if (sg_Id_Wg == 0) {
-		fill_Q(item, Q_data);
-
 		// Declaring and filling submatrices
 		T_JM_B sub_P;
-		T_JM_C sub_V;
-		T_JM_A sub_Q;
-		T_JM_B sub_W;
-		T_JM_C sub_C;
 		joint_matrix_fill(sg, sub_P, 1.0f); // P: only ones
+
+		T_JM_C sub_V;
 		joint_matrix_fill(sg, sub_V, 0.0f); // Output: initialize to zeros
-		joint_matrix_fill(sg, sub_C, 0.0f); // Final result
-		joint_matrix_load(sg, sub_Q, sycl::local_ptr<TA>(Q_data), tM);	// Load use::a -> stride is tM
 
 		// 1. Accumulate the values: V <- AP + V
 		for(uint i = 0; i < (4 * NUM_OF_THREADS_PER_BLOCK) / TILE_NELEMS;  i++) {
 			const uint offset = i * TILE_NELEMS;
 
 			/*
+			int wg_Id_ND = item.get_group(2);
+			int wi_Id_sg = sg.get_local_id();
 			if (wg_Id_ND == 0 && wi_Id_sg == 0) {
 				sycl::ext::oneapi::experimental::printf("\nLoop: tripcount = %d | iteration = %d | offset = %d", (4 * NUM_OF_THREADS_PER_BLOCK) / TILE_NELEMS, i, offset);
 			}
@@ -279,6 +272,14 @@ void reduce_via_matrix_units (
 			joint_matrix_load(sg, sub_A, sycl::local_ptr<TA>(data_to_be_reduced + offset), tM); // Load use::a -> stride is tM
 			joint_matrix_mad(sg, sub_V, sub_A, sub_P, sub_V);
 		}
+
+		T_JM_A sub_Q;
+		T_JM_B sub_W;
+		T_JM_C sub_C;
+
+		fill_Q(item, Q_data);
+		joint_matrix_fill(sg, sub_C, 0.0f); // Final result
+		joint_matrix_load(sg, sub_Q, sycl::local_ptr<TA>(Q_data), tM);	// Load use::a -> stride is tM
 
 		// W <- V (required since we need V as a "use::b")
 		joint_matrix_store(sg, sub_V, sycl::local_ptr<TC>(tmp), tM, layout::col_major);
