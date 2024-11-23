@@ -136,6 +136,10 @@ catch (sycl::exception const &exc)
 	std::exit(1);
 }
 
+#ifdef USE_XMX
+#include "xmx_capabilities.hpp"
+#endif
+
 void setup_gpu_for_docking(
 	GpuData &cData,
 	GpuTempData &tData)
@@ -193,133 +197,7 @@ try {
 	cData.devnum=-2;
 
 	#ifdef USE_XMX
-	using namespace sycl::ext::oneapi::experimental;
-
-	// Device architecture
-	architecture arch = dpct::get_default_queue().get_device().get_info<info::device::architecture>();
-	printf("\nDetected architecture: ");
-	switch (arch) {
-		case architecture::x86_64:
-			printf("Any CPU device with the x86_64 instruction set");
-		break;
-		case architecture::intel_gpu_pvc:
-			printf("Ponte Vecchio Intel graphics");
-		break;
-		case architecture::intel_gpu_pvc_vg:
-			printf("Ponte Vecchio VG Intel graphics");
-		break;
-		case architecture::nvidia_gpu_sm_70:
-			printf("NVIDIA Volta (compute capability 7.0)");
-		break;
-		case architecture::nvidia_gpu_sm_72:
-			printf("NVIDIA Volta (compute capability 7.2)");
-		break;
-		case architecture::nvidia_gpu_sm_75:
-			printf("NVIDIA Turing (compute capability 7.5)");
-		break;
-		case architecture::nvidia_gpu_sm_80:
-			printf("NVIDIA Ampere (compute capability 8.0)");
-		break;
-		case architecture::nvidia_gpu_sm_86:
-			printf("NVIDIA Ampere (compute capability 8.6)");
-		break;
-		case architecture::nvidia_gpu_sm_89:
-			printf("NVIDIA Ada Lovelace (compute capability 8.9)");
-		break;
-		case architecture::nvidia_gpu_sm_90:
-			printf("NVIDIA Hopper (compute capability 9.0)");
-		break;
-//		case architecture::nvidia_gpu_sm_90a:
-//			printf("NVIDIA Hopper (compute capability 9.0a)");
-//		break;
-		default:
-			printf("Unknown");
-		break;
-	}
-
-	// Runtime Query of matrix sizes and types configurations
-	std::vector<matrix::combination> combinations = dpct::get_default_queue().get_device().get_info<info::device::matrix_combinations>();
-	printf("\nSupported joint-matrix combinations on device: %2i\n", sizeof(combinations));
-	for (int i = 0; i < sizeof(combinations); i++) {
-		if (
-			(combinations[i].max_msize == 0) &&
-			(combinations[i].max_nsize == 0) &&
-			(combinations[i].max_ksize == 0)
-		) {
-			if (	// Maximum allowed according to documentation
-				(combinations[i].msize <= 32) &&
-				(combinations[i].nsize <= 32) &&
-				(combinations[i].ksize <= 32)
-			) {
-				printf("\tComb. #%2i: \t discrete sizes (m,n,k): %2zu %2zu %2zu",
-					i, combinations[i].msize, combinations[i].nsize, combinations[i].ksize);
-			}
-			else {
-				printf(" \tComb. #%2i: \t Any discrete size is greater than 32 -> Wrong combination!", i);
-			}
-		}
-		else {
-			if (
-				(combinations[i].max_msize <= 32) &&
-				(combinations[i].max_nsize <= 32) &&
-				(combinations[i].max_ksize <= 32) &&
-				(combinations[i].msize <= 32) &&
-				(combinations[i].nsize <= 32) &&
-				(combinations[i].ksize <= 32)
-			) {
-				printf("\tComb. #%2i: \t continuous-sizes (m,n,k): %2zu %2zu %2zu \t|\t discrete sizes (m,n,k): %2zu %2zu %2zu",
-				i,
-				combinations[i].max_msize, combinations[i].max_nsize, combinations[i].max_ksize,
-				combinations[i].msize, combinations[i].nsize, combinations[i].ksize);
-			}
-			else {
-				printf(" \tComb. #%2i: \t Any size (continuous/discrete/both) is greater than 32 -> Wrong combination!", i);
-			}
-		}
-		/*
-		if (
-			(combinations[i].msize == 16) &&
-			(combinations[i].nsize == 16) &&
-			(combinations[i].ksize == 16)
-		) {
-		*/
-			if (matrix::matrix_type::fp16 == combinations[i].atype &&
-				matrix::matrix_type::fp16 == combinations[i].btype &&
-				matrix::matrix_type::fp32 == combinations[i].ctype &&
-				matrix::matrix_type::fp32 == combinations[i].dtype) {
-				printf(" <- A (half), B (half), C (float), D (float)");
-			}
-			if (matrix::matrix_type::fp16 == combinations[i].atype &&
-				matrix::matrix_type::fp16 == combinations[i].btype &&
-				matrix::matrix_type::fp16 == combinations[i].ctype &&
-				matrix::matrix_type::fp32 == combinations[i].dtype) {
-				printf(" <- A (half), B (half), C (half), D (float)");
-			}
-			if (matrix::matrix_type::fp16 == combinations[i].atype &&
-				matrix::matrix_type::fp16 == combinations[i].btype &&
-				matrix::matrix_type::fp32 == combinations[i].ctype &&
-				matrix::matrix_type::fp16 == combinations[i].dtype) {
-				printf(" <- A (half), B (half), C (float), D (half)");
-			}
-			if (matrix::matrix_type::fp16 == combinations[i].atype &&
-				matrix::matrix_type::fp16 == combinations[i].btype &&
-				matrix::matrix_type::fp16 == combinations[i].ctype &&
-				matrix::matrix_type::fp16 == combinations[i].dtype) {
-				printf(" <- A (half), B (half), C (half), D (half)");
-			}
-		/*
-		}
-		*/
-
-		if (matrix::matrix_type::tf32 == combinations[i].atype &&
-			matrix::matrix_type::tf32 == combinations[i].btype &&
-			matrix::matrix_type::fp32 == combinations[i].ctype &&
-			matrix::matrix_type::fp32 == combinations[i].dtype) {
-			printf(" <- A (tf32), B (tf32), C (float), D (float)");
-		}
-
-		printf("\n");
-	}
+	query_xmx_capabilities(dpct::get_default_queue());
 	#endif
 
 #ifdef SET_CUDA_PRINTF_BUFFER
