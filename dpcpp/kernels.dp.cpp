@@ -232,13 +232,6 @@ using T_JM_A = joint_matrix<sycl::sub_group, TA, use::a, tM, tK, layout::col_maj
 using T_JM_B = joint_matrix<sycl::sub_group, TB, use::b, tK, tN, layout::col_major>;
 using T_JM_C = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
 
-// Implementation based on MSc thesis at KTH:
-// "Accelerating a Molecular Docking Application by Leveraging Modern Heterogeneous Computing Systemx"
-// https://www.diva-portal.org/smash/get/diva2:1786161/FULLTEXT01.pdf
-//
-// We consider that a CUDA fragment is equivalent to a SYCL submatrix
-//
-// Compilation: make DEVICE=XeGPU PLATFORM=NvGPU XMX=ON TESTLS=ad NUMWI=64 test
 void reduce_via_matrix_units (
 	sycl::nd_item<3> item,
 	sycl::half *data_to_be_reduced,
