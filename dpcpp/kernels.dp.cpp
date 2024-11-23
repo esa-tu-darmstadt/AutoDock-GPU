@@ -90,7 +90,7 @@ using TB = sycl::half;
 using TC = sycl::half;
 
 // Number of elements of input matrix (to be reduced)
-constexpr int TILE_NELEMS = tM * tN;
+constexpr int TILE_NELEMS = tM * tK;
 
 using namespace sycl::ext::oneapi::experimental::matrix;
 
@@ -118,9 +118,9 @@ void print_submatrix_sg (
 	// Only a single work-item within a sub-group prints
 	if (wg_Id_ND == 0 && wi_Id_sg == 0) {
 		sycl::ext::oneapi::experimental::printf("\n%s", msg);
-		for (uint i = 0; i < NROWS; i++) { // Row counter
+		for (uint i = 0; i < NROWS; i++) {
 			sycl::ext::oneapi::experimental::printf("\n[Row %2u]: ", i);
-			for (uint j = 0; j < NCOLS; j++) { // Col counter
+			for (uint j = 0; j < NCOLS; j++) {
 				if (LAYOUT == layout::row_major) {
 					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
 				}
@@ -164,7 +164,7 @@ void print_submatrix_WG (
 void print_wi_indexes (
 	sycl::nd_item<3> item
 ) {
-	// Identifying global, local, and group ids
+	// Identifying global, local, and work-group ids
 	int wi_Id_ND = item.get_global_id(2); // Returns the wi's position in the NDRange (in dimension 2)
 	int wi_Id_Wg = item.get_local_id(2); // Returns the wi's position within the current wg (in dimension 2)
 	int wg_Id_ND = item.get_group(2); // Returns the wg's position within the overal NDRange (in dimension 2)
@@ -194,7 +194,7 @@ void fill_Q (
 	int wi_Id_sg = sg.get_local_id();
 	int sg_Size = sg.get_local_range().get(0);
 
-	// Slightly improved multi-threaded implementation
+	// Slightly improved multi-threaded implementation.
 	// IMPORTANT: this is computed by a sub-group,
 	// and thus, the stride MUST be "sg_Size" instead of "wg_Size"
 	for (uint i = wi_Id_sg; i < tM/4; i+=sg_Size) {	// Row counter: how many rows (of 4x4 blocks) are there in the matrix?
