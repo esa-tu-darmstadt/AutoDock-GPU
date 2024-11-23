@@ -461,7 +461,6 @@ void gpu_gradient_minAD(
 		sycl::local_accessor<int, 0> cons_fail_acc_ct1(cgh);
 
 		#ifdef USE_XMX
-		// TODO: try instead passing float + reducing usage of sycl::half to only matrix types!
 		/* Reduction using matrix units */
 		sycl::local_accessor<sycl::half, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
 		sycl::local_accessor<sycl::half, 1> Q_data(sycl::range<1>(tM * tK), cgh);
