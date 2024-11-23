@@ -732,6 +732,8 @@ void gpu_calc_energrad(
 	torque_rot.z() = (float)(data_to_be_reduced[2]);
 	energy = (float)(data_to_be_reduced[3]);
 
+	//print_reduced_values(item_ct1, "tx, ty, tz, e", data_to_be_reduced);
+
 	/* Reduction using matrix units */
 #else
 	// Do a reduction over the total gradient containing prepared "gradient_intra_*" values
@@ -779,6 +781,8 @@ void gpu_calc_energrad(
 	gx = (float)(data_to_be_reduced[0]);
 	gy = (float)(data_to_be_reduced[1]);
 	gz = (float)(data_to_be_reduced[2]);
+
+	//print_reduced_values(item_ct1, "gx, gy, gz", data_to_be_reduced_arranged);
 
 	/* Reduction using matrix units */
 #else
