@@ -81,7 +81,7 @@ inline int64_t ullitolli(uint64_t u)
 //#define DEBUG_XMX_INPUTS
 //#define DEBUG_XMX_INPUTS_INDEX_MAP
 #define XMX_EC
-#define XMX_EC_DEBUG
+//#define XMX_EC_DEBUG
 
 // Number of rows/cols of a submatrix: tM, tN, tK
 constexpr int tM = 8;
