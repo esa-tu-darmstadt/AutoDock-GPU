@@ -38,11 +38,15 @@ gpu_sum_evals_kernel(
 // The number of blocks which should be started equals to num_of_runs,
 // since each block performs the summation for one run.
 {
+	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockIdx_x = item_ct1.get_group(2);
+	int blockDim_x = item_ct1.get_local_range(2);
+
 	int partsum_evals = 0;
-	int *pEvals_of_new_entities = cData.pMem_evals_of_new_entities + item_ct1.get_group(2) * cData.dockpars.pop_size;
-	for (int entity_counter = item_ct1.get_local_id(2);
+	int *pEvals_of_new_entities = cData.pMem_evals_of_new_entities + blockIdx_x * cData.dockpars.pop_size;
+	for (int entity_counter = threadIdx_x;
 			 entity_counter < cData.dockpars.pop_size;
-			 entity_counter += item_ct1.get_local_range().get(2))
+			 entity_counter += blockDim_x)
 	{
 		partsum_evals += pEvals_of_new_entities[entity_counter];
 	}
@@ -50,9 +54,9 @@ gpu_sum_evals_kernel(
 	// Perform warp-wise reduction
 	*sSum_evals = sycl::reduce_over_group(item_ct1.get_group(), partsum_evals, std::plus<>());
 
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
-		cData.pMem_gpu_evals_of_runs[item_ct1.get_group(2)] += *sSum_evals;
+		cData.pMem_gpu_evals_of_runs[blockIdx_x] += *sSum_evals;
 	}
 }
 

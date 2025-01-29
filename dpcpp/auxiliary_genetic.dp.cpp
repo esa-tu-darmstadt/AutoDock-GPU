@@ -38,19 +38,20 @@ inline uint32_t gpu_rand(uint32_t* prng_states, sycl::nd_item<3> item_ct1)
 // prng_states (thread with ID tx in block with ID bx stores its state in prng_states[bx*NUM_OF_THREADS_PER_BLOCK+$
 // The random number generator uses the gcc linear congruential generator constants.
 {
+	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockIdx_x = item_ct1.get_group(2);
+	int blockDim_x = item_ct1.get_local_range(2);
+
 	uint state;
 	// Current state of the threads own PRNG
 	// state = prng_states[get_group_id(0)*NUM_OF_THREADS_PER_BLOCK + get_local_id(0)];
-        state = prng_states[item_ct1.get_group(2) *
-                                item_ct1.get_local_range().get(2) +
-                            item_ct1.get_local_id(2)];
-        // Calculating next state
+	state = prng_states[blockIdx_x * blockDim_x + threadIdx_x];
+	// Calculating next state
 	state = (RAND_A*state+RAND_C);
 	// Saving next state to memory
 	// prng_states[get_group_id(0)*NUM_OF_THREADS_PER_BLOCK + get_local_id(0)] = state;
-        prng_states[item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
-                    item_ct1.get_local_id(2)] = state;
-        return state;
+	prng_states[blockIdx_x * blockDim_x + threadIdx_x] = state;
+	return state;
 }
 
 // -------------------------------------------------------
@@ -64,8 +65,8 @@ SYCL_EXTERNAL inline float gpu_randf(uint32_t *prng_states,
 {
 	float state;
 	// State will be between 0 and 1
-        state = ((float)gpu_rand(prng_states, item_ct1) / (float)MAX_UINT) * 0.999999f;
-        return state;
+	state = ((float)gpu_rand(prng_states, item_ct1) / (float)MAX_UINT) * 0.999999f;
+	return state;
 }
 
 // -------------------------------------------------------

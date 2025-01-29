@@ -154,6 +154,9 @@ void gpu_calc_energy(
 // of the run whose population includes the current entity (which can be determined with blockIdx.x), since this
 // determines which reference orientation should be used.
 {
+	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockDim_x = item_ct1.get_local_range(2);
+
 	energy = 0.0f;
 #if defined (DEBUG_ENERGY_KERNEL)
 	float interE = 0.0f;
@@ -162,9 +165,9 @@ void gpu_calc_energy(
 
 	// Initializing gradients (forces)
 	// Derived from autodockdev/maps.py
-	for (uint atom_id = item_ct1.get_local_id(2);
+	for (uint atom_id = threadIdx_x;
 			  atom_id < cData.dockpars.num_of_atoms;
-			  atom_id += item_ct1.get_local_range().get(2))
+			  atom_id += blockDim_x)
 	{
 		// Initialize coordinates
 		calc_coords[atom_id].x() = cData.pKerconst_conform->ref_coords_const[3 * atom_id];
@@ -201,9 +204,9 @@ void gpu_calc_energy(
 	// ================================================
 	// CALCULATING ATOMIC POSITIONS AFTER ROTATIONS
 	// ================================================
-	for (uint rotation_counter = item_ct1.get_local_id(2);
+	for (uint rotation_counter = threadIdx_x;
 			  rotation_counter < cData.dockpars.rotbondlist_length;
-			  rotation_counter += item_ct1.get_local_range().get(2))
+			  rotation_counter += blockDim_x)
 	{
 		int rotation_list_element = cData.pKerconst_rotlist->rotlist_const[rotation_counter];
 
@@ -276,9 +279,9 @@ void gpu_calc_energy(
 	// ================================================
 	float weights[8];
 	float cube[8];
-	for (uint atom_id = item_ct1.get_local_id(2);
+	for (uint atom_id = threadIdx_x;
 			  atom_id < cData.dockpars.num_of_atoms;
-			  atom_id += item_ct1.get_local_range().get(2))
+			  atom_id += blockDim_x)
 	{
 		if (cData.pKerconst_interintra->ignore_inter_const[atom_id]>0) // first two atoms of a flex res are to be ignored here
 			continue;
@@ -398,9 +401,9 @@ void gpu_calc_energy(
 	// ================================================
 	// CALCULATING INTRAMOLECULAR ENERGY
 	// ================================================
-	for (uint contributor_counter = item_ct1.get_local_id(2);
+	for (uint contributor_counter = threadIdx_x;
 			  contributor_counter < cData.dockpars.num_of_intraE_contributors;
-			  contributor_counter += item_ct1.get_local_range().get(2))
+			  contributor_counter += blockDim_x)
 	{
 		// Getting atom IDs
 		uint32_t atom1_id = cData.pKerconst_intracontrib->intraE_contributors_const[2*contributor_counter];

@@ -59,6 +59,10 @@ gpu_perform_LS_kernel(
 // it is always tested according to the ls probability, and if it not to be
 // subjected to local search, the entity with ID num_of_lsentities is selected instead of the first one (with ID 0).
 {
+	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockIdx_x = item_ct1.get_group(2);
+	int blockDim_x = item_ct1.get_local_range(2);
+
 	auto sFloatBuff = (float *)dpct_local;
 	float candidate_energy;
 	int run_id;
@@ -74,10 +78,10 @@ gpu_perform_LS_kernel(
 
 	// Determining run ID and entity ID
 	// Initializing offspring genotype
-	run_id = item_ct1.get_group(2) / cData.dockpars.num_of_lsentities;
-	if (item_ct1.get_local_id(2) == 0)
+	run_id = blockIdx_x / cData.dockpars.num_of_lsentities;
+	if (threadIdx_x == 0)
 	{
-		*entity_id = item_ct1.get_group(2) % cData.dockpars.num_of_lsentities;
+		*entity_id = blockIdx_x % cData.dockpars.num_of_lsentities;
 
 		// Since entity 0 is the best one due to elitism,
 		// it should be subjected to random selection
@@ -104,9 +108,9 @@ gpu_perform_LS_kernel(
 
 	size_t offset = (run_id * cData.dockpars.pop_size + *entity_id) * GENOTYPE_LENGTH_IN_GLOBMEM;
 
-	for (uint32_t gene_counter = item_ct1.get_local_id(2);
+	for (uint32_t gene_counter = threadIdx_x;
 				  gene_counter < cData.dockpars.num_of_genes;
-				  gene_counter += item_ct1.get_local_range().get(2))
+				  gene_counter += blockDim_x)
 	{
 		offspring_genotype[gene_counter] = pMem_conformations_next[offset + gene_counter];
 		genotype_bias[gene_counter] = 0.0f;
@@ -121,9 +125,9 @@ gpu_perform_LS_kernel(
 	while ((*iteration_cnt < cData.dockpars.max_num_of_iters) && (*rho > cData.dockpars.rho_lower_bound))
 	{
 		// New random deviate
-		for (uint32_t gene_counter = item_ct1.get_local_id(2);
+		for (uint32_t gene_counter = threadIdx_x;
 					  gene_counter < cData.dockpars.num_of_genes;
-					  gene_counter += item_ct1.get_local_range().get(2))
+					  gene_counter += blockDim_x)
 		{
 #ifdef SWAT3
 			genotype_deviate[gene_counter] = *rho *
@@ -160,9 +164,9 @@ gpu_perform_LS_kernel(
 		}
 
 		// Generating new genotype candidate
-		for (uint32_t gene_counter = item_ct1.get_local_id(2);
+		for (uint32_t gene_counter = threadIdx_x;
 					  gene_counter < cData.dockpars.num_of_genes;
-					  gene_counter += item_ct1.get_local_range().get(2))
+					  gene_counter += blockDim_x)
 		{
 			genotype_candidate[gene_counter] = offspring_genotype[gene_counter] + genotype_deviate[gene_counter] + genotype_bias[gene_counter];
 		}
@@ -181,7 +185,7 @@ gpu_perform_LS_kernel(
 		);
         // =================================================================
         
-		if (item_ct1.get_local_id(2) == 0) {
+		if (threadIdx_x == 0) {
 			(*evaluation_cnt)++;
 		}
 
@@ -189,9 +193,9 @@ gpu_perform_LS_kernel(
 
 		if (candidate_energy < *offspring_energy) // If candidate is better, success
 		{
-			for (uint32_t gene_counter = item_ct1.get_local_id(2);
+			for (uint32_t gene_counter = threadIdx_x;
 						  gene_counter < cData.dockpars.num_of_genes;
-						  gene_counter += item_ct1.get_local_range().get(2))
+						  gene_counter += blockDim_x)
 			{
 				// Updating offspring_genotype
 				offspring_genotype[gene_counter] = genotype_candidate[gene_counter];
@@ -204,7 +208,7 @@ gpu_perform_LS_kernel(
 
 			item_ct1.barrier(SYCL_MEMORY_SPACE);
 
-			if (item_ct1.get_local_id(2) == 0)
+			if (threadIdx_x == 0)
 			{
 				*offspring_energy = candidate_energy;
 				(*cons_succ)++;
@@ -214,9 +218,9 @@ gpu_perform_LS_kernel(
 		else // If candidate is worse, check the opposite direction
 		{
 			// Generating the other genotype candidate
-			for (uint32_t gene_counter = item_ct1.get_local_id(2);
+			for (uint32_t gene_counter = threadIdx_x;
 						  gene_counter < cData.dockpars.num_of_genes;
-						  gene_counter += item_ct1.get_local_range().get(2))
+						  gene_counter += blockDim_x)
 			{
 				genotype_candidate[gene_counter] = offspring_genotype[gene_counter] - genotype_deviate[gene_counter] - genotype_bias[gene_counter];
 			}
@@ -235,7 +239,7 @@ gpu_perform_LS_kernel(
 			);
 			// =================================================================
 
-			if (item_ct1.get_local_id(2) == 0) {
+			if (threadIdx_x == 0) {
 				(*evaluation_cnt)++;
 				#if defined (DEBUG_ENERGY_KERNEL)
 				printf("%-18s [%-5s]---{%-5s}   [%-10.8f]---{%-10.8f}\n", "-ENERGY-KERNEL3-", "GRIDS", "INTRA", partial_interE[0], partial_intraE[0]);
@@ -246,9 +250,9 @@ gpu_perform_LS_kernel(
 
 			if (candidate_energy < *offspring_energy) // If candidate is better, success
 			{
-				for (uint32_t gene_counter = item_ct1.get_local_id(2);
+				for (uint32_t gene_counter = threadIdx_x;
 							  gene_counter < cData.dockpars.num_of_genes;
-							  gene_counter += item_ct1.get_local_range().get(2))
+							  gene_counter += blockDim_x)
 				{
 					// Updating offspring_genotype
 					offspring_genotype[gene_counter] = genotype_candidate[gene_counter];
@@ -261,7 +265,7 @@ gpu_perform_LS_kernel(
 				// used in the previous if condition
 				item_ct1.barrier(SYCL_MEMORY_SPACE);
 
-				if (item_ct1.get_local_id(2) == 0)
+				if (threadIdx_x == 0)
 				{
 					*offspring_energy = candidate_energy;
 					(*cons_succ)++;
@@ -270,15 +274,15 @@ gpu_perform_LS_kernel(
 			}
 			else	// Failure in both directions
 			{
-				for (uint32_t gene_counter = item_ct1.get_local_id(2);
+				for (uint32_t gene_counter = threadIdx_x;
 							  gene_counter < cData.dockpars.num_of_genes;
-							  gene_counter += item_ct1.get_local_range().get(2))
+							  gene_counter += blockDim_x)
 				{
 					// Updating genotype_bias
 					genotype_bias[gene_counter] = 0.5f * genotype_bias[gene_counter];
 				}
                 
-				if (item_ct1.get_local_id(2) == 0)
+				if (threadIdx_x == 0)
 				{
 					*cons_succ = 0;
 					(*cons_fail)++;
@@ -287,7 +291,7 @@ gpu_perform_LS_kernel(
 		}
 
 		// Changing rho if needed
-		if (item_ct1.get_local_id(2) == 0)
+		if (threadIdx_x == 0)
 		{
 			(*iteration_cnt)++;
 			if (*cons_succ >= cData.dockpars.cons_limit)
@@ -306,7 +310,7 @@ gpu_perform_LS_kernel(
 	}
 
 	// Updating eval counter and energy
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
 		cData.pMem_evals_of_new_entities[run_id * cData.dockpars.pop_size + *entity_id] += *evaluation_cnt;
  		pMem_energies_next[run_id * cData.dockpars.pop_size + *entity_id] = *offspring_energy;
@@ -315,9 +319,9 @@ gpu_perform_LS_kernel(
 	// Mapping torsion angles and writing out results
 	offset = (run_id * cData.dockpars.pop_size + *entity_id) * GENOTYPE_LENGTH_IN_GLOBMEM;
 
-	for (uint32_t gene_counter = item_ct1.get_local_id(2);
+	for (uint32_t gene_counter = threadIdx_x;
 				  gene_counter < cData.dockpars.num_of_genes;
-				  gene_counter += item_ct1.get_local_range().get(2))
+				  gene_counter += blockDim_x)
 	{
 		if (gene_counter >= 3) {
 			map_angle(offspring_genotype[gene_counter]);
