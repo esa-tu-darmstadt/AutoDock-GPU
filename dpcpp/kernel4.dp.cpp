@@ -86,10 +86,11 @@ gpu_gen_and_eval_newpops_kernel(
 				 entity_counter < cData.dockpars.pop_size;
 				 entity_counter += blockDim_x)
 		{
-			if (pMem_energies_current[blockIdx_x + entity_counter] < sBestEnergy[threadIdx_x])
+			float e = pMem_energies_current[blockIdx_x + entity_counter];
+			if (e < sBestEnergy[threadIdx_x])
 			{
 				sBestID[threadIdx_x] = entity_counter;
-				sBestEnergy[threadIdx_x] = pMem_energies_current[blockIdx_x + entity_counter];
+				sBestEnergy[threadIdx_x] = e;
 			}
 		}
 
