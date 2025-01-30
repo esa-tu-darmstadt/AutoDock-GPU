@@ -335,7 +335,7 @@ void gpu_gen_and_eval_newpops(
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
 
-		sycl::local_accessor<float, 1> offspring_genotype_acc_ct1(sycl::range<1>(64 /*ACTUAL_GENOTYPE_LENGTH*/), cgh);
+		sycl::local_accessor<float, 1> offspring_genotype_acc_ct1(sycl::range<1>(ACTUAL_GENOTYPE_LENGTH), cgh);
 		sycl::local_accessor<int, 1> parent_candidates_acc_ct1(sycl::range<1>(4), cgh);
 		sycl::local_accessor<float, 1> candidate_energies_acc_ct1(sycl::range<1>(4), cgh);
 		sycl::local_accessor<int, 1> parents_acc_ct1(sycl::range<1>(2), cgh);
