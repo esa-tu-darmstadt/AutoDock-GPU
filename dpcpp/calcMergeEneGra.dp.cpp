@@ -754,14 +754,7 @@ void gpu_calc_energrad(
 
 		// Derived from rotation.py/axisangle_to_q()
 		// genes[3:7] = rotation.axisangle_to_q(torque, rad)
-
-		/*
-		DPCT1017:32: The sycl::fast_length call is used instead of the
-		norm3df call. These two calls do not provide exactly the same
-		functionality. Check the potential precision and/or performance
-		issues for the generated code.
-		*/
-		float torque_length = sycl::fast_length(sycl::float3(torque_rot.x(), torque_rot.y(), torque_rot.z()));
+		float torque_length = SYCL_LENGTH(sycl::float3(torque_rot.x(), torque_rot.y(), torque_rot.z()));
 		torque_length += (torque_length < 1e-20f) * 1e-20f;
 		
 		#if defined (PRINT_GRAD_ROTATION_GENES)
@@ -980,14 +973,7 @@ void gpu_calc_energrad(
 		rotation_unitvec.x() = calc_coords[atom2_id].x() - atomRef_coords.x();
 		rotation_unitvec.y() = calc_coords[atom2_id].y() - atomRef_coords.y();
 		rotation_unitvec.z() = calc_coords[atom2_id].z() - atomRef_coords.z();
-
-		/*
-		DPCT1017:34: The sycl::fast_length call is used instead of the
-		rnorm3df call. These two calls do not provide exactly the same
-		functionality. Check the potential precision and/or performance
-		issues for the generated code.
-		*/
-		float l = SYCL_RECIP(sycl::fast_length(sycl::float3(rotation_unitvec.x(), rotation_unitvec.y(), rotation_unitvec.z())));
+		float l = SYCL_RECIP(SYCL_LENGTH(sycl::float3(rotation_unitvec.x(), rotation_unitvec.y(), rotation_unitvec.z())));
 		rotation_unitvec.x() *= l;
 		rotation_unitvec.y() *= l;
 		rotation_unitvec.z() *= l;
