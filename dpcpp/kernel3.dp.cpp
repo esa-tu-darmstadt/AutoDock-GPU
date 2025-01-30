@@ -95,8 +95,7 @@ gpu_perform_LS_kernel(
 			}
 		}
 
-		*offspring_energy =
-		pMem_energies_next[run_id * cData.dockpars.pop_size + *entity_id];
+		*offspring_energy = pMem_energies_next[run_id * cData.dockpars.pop_size + *entity_id];
 		*rho = 1.0f;
 		*cons_succ = 0;
 		*cons_fail = 0;
@@ -148,9 +147,9 @@ gpu_perform_LS_kernel(
 				}
 			}
 #else
-			genotype_deviate[gene_counter] = rho * 
-							(2.0f * gpu_randf(cData.pMem_prng_states) - 1.0f) * 
-							(gpu_randf(cData.pMem_prng_states) < 0.3f);
+			genotype_deviate[gene_counter] = *rho *
+							(2.0f * gpu_randf(cData.pMem_prng_states, item_ct1) - 1.0f) *
+							(gpu_randf(cData.pMem_prng_states, item_ct1) < 0.3f);
 
 			// Translation genes
 			if (gene_counter < 3) {
