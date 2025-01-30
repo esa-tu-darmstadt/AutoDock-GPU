@@ -148,7 +148,7 @@ enum {C=0,N=1,O=2,H=3,XX=4,P=5,S=6};  // see "bond_index" in the "AD4.1_bound.da
 	#define SYCL_COS(x) sycl::cos(x)
 	#define SYCL_DIVIDE(x,y) (x/y)
 	#define SYCL_RECIP(x) (1.0f/x)
-	#define SYCL_POWN(x,y) sycl::pow<float>(x,y)
+	#define SYCL_POWN(x,y) sycl::pow(x,y)
 #endif
 
 // Enables switching between local and global memory for barriers in device code
