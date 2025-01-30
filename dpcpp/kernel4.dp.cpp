@@ -343,7 +343,7 @@ void gpu_gen_and_eval_newpops(
 		sycl::local_accessor<float, 1> randnums_acc_ct1(sycl::range<1>(10), cgh);
 		sycl::local_accessor<float, 1> sBestEnergy_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
 		sycl::local_accessor<int, 1> sBestID_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
-		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(256 /*MAX_NUM_OF_ATOMS*/), cgh);
+		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(MAX_NUM_OF_ATOMS), cgh);
 
 		cgh.parallel_for(
 			sycl::nd_range<3>(

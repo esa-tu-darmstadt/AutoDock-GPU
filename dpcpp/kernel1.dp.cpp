@@ -74,7 +74,7 @@ void gpu_calc_initpop(
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
 
-		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(/*256*/ MAX_NUM_OF_ATOMS), cgh);
+		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(MAX_NUM_OF_ATOMS), cgh);
 
 		cgh.parallel_for(
 			sycl::nd_range<3>(
