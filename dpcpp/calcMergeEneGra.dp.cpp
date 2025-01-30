@@ -80,6 +80,7 @@ void gpu_calc_energrad(
 	int threadIdx_x = item_ct1.get_local_id(2);
 	int blockIdx_x = item_ct1.get_group(2);
 	int blockDim_x = item_ct1.get_local_range(2);
+	auto groupIdx = item_ct1.get_group();
 
 	float energy = 0.0f;
 #ifdef DOCK_TRACE
@@ -699,24 +700,24 @@ void gpu_calc_energrad(
 	}
 
 	// Do a reduction over the total gradient containing prepared "gradient_intra_*" values
-	torque_rot.x() = sycl::reduce_over_group(item_ct1.get_group(), torque_rot.x(), std::plus<>());
-	torque_rot.y() = sycl::reduce_over_group(item_ct1.get_group(), torque_rot.y(), std::plus<>());
-	torque_rot.z() = sycl::reduce_over_group(item_ct1.get_group(), torque_rot.z(), std::plus<>());
+	torque_rot.x() = sycl::reduce_over_group(groupIdx, torque_rot.x(), std::plus<>());
+	torque_rot.y() = sycl::reduce_over_group(groupIdx, torque_rot.y(), std::plus<>());
+	torque_rot.z() = sycl::reduce_over_group(groupIdx, torque_rot.z(), std::plus<>());
 
 	// TODO
 	// -------------------------------------------------------
 	// Obtaining energy and translation-related gradients
 	// -------------------------------------------------------
 	// reduction over partial energies and prepared "gradient_intra_*" values
-	energy = sycl::reduce_over_group(item_ct1.get_group(), energy, std::plus<>());
+	energy = sycl::reduce_over_group(groupIdx, energy, std::plus<>());
 
 #if defined (DEBUG_ENERGY_KERNEL)
-	intraE = sycl::reduce_over_group(item_ct1.get_group(), intraE, std::plus<>());
+	intraE = sycl::reduce_over_group(groupIdx, intraE, std::plus<>());
 #endif
 
-	gx = sycl::reduce_over_group(item_ct1.get_group(), gx, std::plus<>());
-	gy = sycl::reduce_over_group(item_ct1.get_group(), gy, std::plus<>());
-	gz = sycl::reduce_over_group(item_ct1.get_group(), gz, std::plus<>());
+	gx = sycl::reduce_over_group(groupIdx, gx, std::plus<>());
+	gy = sycl::reduce_over_group(groupIdx, gy, std::plus<>());
+	gz = sycl::reduce_over_group(groupIdx, gz, std::plus<>());
 
 	global_energy = energy;
 	int* gradient_genotype = (int*)fgradient_genotype;

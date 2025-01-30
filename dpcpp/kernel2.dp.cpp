@@ -41,6 +41,7 @@ gpu_sum_evals_kernel(
 	int threadIdx_x = item_ct1.get_local_id(2);
 	int blockIdx_x = item_ct1.get_group(2);
 	int blockDim_x = item_ct1.get_local_range(2);
+	auto groupIdx = item_ct1.get_group();
 
 	int partsum_evals = 0;
 	int *pEvals_of_new_entities = cData.pMem_evals_of_new_entities + blockIdx_x * cData.dockpars.pop_size;
@@ -52,7 +53,7 @@ gpu_sum_evals_kernel(
 	}
 	
 	// Perform warp-wise reduction
-	*sSum_evals = sycl::reduce_over_group(item_ct1.get_group(), partsum_evals, std::plus<>());
+	*sSum_evals = sycl::reduce_over_group(groupIdx, partsum_evals, std::plus<>());
 
 	if (threadIdx_x == 0)
 	{

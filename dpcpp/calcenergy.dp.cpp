@@ -156,6 +156,7 @@ void gpu_calc_energy(
 {
 	int threadIdx_x = item_ct1.get_local_id(2);
 	int blockDim_x = item_ct1.get_local_range(2);
+	auto groupIdx = item_ct1.get_group();
 
 	energy = 0.0f;
 #if defined (DEBUG_ENERGY_KERNEL)
@@ -388,7 +389,7 @@ void gpu_calc_energy(
 	} // End atom_id for-loop (INTERMOLECULAR ENERGY)
 
 #if defined (DEBUG_ENERGY_KERNEL)
-	interE = sycl::reduce_over_group(item_ct1.get_group(), interE, std::plus<>());
+	interE = sycl::reduce_over_group(groupIdx, interE, std::plus<>());
 #endif
 
 	// In paper: intermolecular and internal energy calculation
@@ -510,10 +511,10 @@ void gpu_calc_energy(
 	} // End contributor_counter for-loop (INTRAMOLECULAR ENERGY)
 
 	// reduction to calculate energy
-	energy = sycl::reduce_over_group(item_ct1.get_group(), energy, std::plus<>());
+	energy = sycl::reduce_over_group(groupIdx, energy, std::plus<>());
 
 #if defined (DEBUG_ENERGY_KERNEL)
-	intraE = sycl::reduce_over_group(item_ct1.get_group(), intraE, std::plus<>());
+	intraE = sycl::reduce_over_group(groupIdx, intraE, std::plus<>());
 #endif
 }
 
