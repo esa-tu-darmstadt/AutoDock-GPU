@@ -34,28 +34,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define syclprintf sycl::ext::oneapi::experimental::printf
 
-inline uint64_t llitoulli(int64_t l)
-{
-	uint64_t u;
-	/*
-	DPCT1053:0: Migration of device assembly code is not supported.
-	*/
-	// asm("mov.b64    %0, %1;" : "=l"(u) : "l"(l));
-	u = l;
-	return u;
-}
-
-inline int64_t ullitolli(uint64_t u)
-{
-	int64_t l;
-	/*
-	DPCT1053:1: Migration of device assembly code is not supported.
-	*/
-	// asm("mov.b64    %0, %1;" : "=l"(l) : "l"(u));
-	l = u;
-	return l;
-}
-
 #define ATOMICADDI32(pAccumulator, value) \
 	sycl::atomic_ref<int, SYCL_ATOMICS_MEMORY_ORDER, SYCL_ATOMICS_MEM_SCOPE, sycl::access::address_space::local_space>(*pAccumulator) += ((int)(value))
 
