@@ -36,9 +36,12 @@ gpu_calc_initpop_kernel(
 	GpuData cData,
 	sycl::float3 *calc_coords)
 {
+	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockIdx_x = item_ct1.get_group(2);
+
 	float  energy = 0.0f;
-	int run_id = item_ct1.get_group(2) / cData.dockpars.pop_size;
-	float *pGenotype = pMem_conformations_current + item_ct1.get_group(2) * GENOTYPE_LENGTH_IN_GLOBMEM;
+	int run_id = blockIdx_x / cData.dockpars.pop_size;
+	float *pGenotype = pMem_conformations_current + blockIdx_x * GENOTYPE_LENGTH_IN_GLOBMEM;
 
 	// =============================================================
 	gpu_calc_energy(
@@ -52,10 +55,10 @@ gpu_calc_initpop_kernel(
 	// =============================================================
 
 	// Write out final energy
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
-		pMem_energies_current[item_ct1.get_group(2)] = energy;
-		cData.pMem_evals_of_new_entities[item_ct1.get_group(2)] = 1;
+		pMem_energies_current[blockIdx_x] = energy;
+		cData.pMem_evals_of_new_entities[blockIdx_x] = 1;
 	}
 }
 
@@ -71,7 +74,7 @@ void gpu_calc_initpop(
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
 
-		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(/*256*/ MAX_NUM_OF_ATOMS), cgh);
+		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(MAX_NUM_OF_ATOMS), cgh);
 
 		cgh.parallel_for(
 			sycl::nd_range<3>(

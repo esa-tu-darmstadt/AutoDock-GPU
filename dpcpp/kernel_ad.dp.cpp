@@ -109,12 +109,16 @@ gpu_gradient_minAD_kernel(
 // it is always tested according to the ls probability, and if it not to be
 // subjected to local search, the entity with ID num_of_lsentities is selected instead of the first one (with ID 0).
 {
+	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockIdx_x = item_ct1.get_group(2);
+	int blockDim_x = item_ct1.get_local_range(2);
+
 	// -----------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------
 
 	// Determining entity, and its run, energy, and genotype
-	int run_id = item_ct1.get_group(2) / cData.dockpars.num_of_lsentities;
+	int run_id = blockIdx_x / cData.dockpars.num_of_lsentities;
 	float energy;
 
 	// Energy may go up, so we keep track of the best energy ever calculated.
@@ -149,11 +153,11 @@ gpu_gradient_minAD_kernel(
 	// Iteration counter for the minimizer
 	uint32_t iteration_cnt = 0;
 
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
 		// Since entity 0 is the best one due to elitism,
 		// it should be subjected to random selection
-		*entity_id = item_ct1.get_group(2) % cData.dockpars.num_of_lsentities;
+		*entity_id = blockIdx_x % cData.dockpars.num_of_lsentities;
 		if (*entity_id == 0)
 		{
 			// If entity 0 is not selected according to LS-rate,
@@ -184,9 +188,9 @@ gpu_gradient_minAD_kernel(
 
 	int offset = (run_id * cData.dockpars.pop_size + *entity_id) * GENOTYPE_LENGTH_IN_GLOBMEM;
 
-	for (int i = item_ct1.get_local_id(2);
+	for (int i = threadIdx_x;
 			 i < cData.dockpars.num_of_genes;
-			 i += item_ct1.get_local_range().get(2))
+			 i += blockDim_x)
 	{
 		genotype[i] = pMem_conformations_next[offset + i];
 	}
@@ -209,9 +213,9 @@ gpu_gradient_minAD_kernel(
 	item_ct1.barrier(SYCL_MEMORY_SPACE);
 
 	// Initializing vectors
-	for (uint32_t i = item_ct1.get_local_id(2);
+	for (uint32_t i = threadIdx_x;
 				  i < cData.dockpars.num_of_genes;
-				  i += item_ct1.get_local_range().get(2))
+				  i += blockDim_x)
 	{
 		gradient[i]        = 0.0f;
 		square_gradient[i] = 0.0f;
@@ -220,13 +224,13 @@ gpu_gradient_minAD_kernel(
 	}
 
 	// Initializing best energy
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
 		*best_energy = INFINITY;
 	}
 
 #ifdef ADADELTA_AUTOSTOP
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
 		*rho = 1.0f;
 		*cons_succ = 0;
@@ -345,9 +349,9 @@ gpu_gradient_minAD_kernel(
 		__syncthreads();
 		#endif // DEBUG_ENERGY_ADADELTA
 
-		for (int i = item_ct1.get_local_id(2);
+		for (int i = threadIdx_x;
 				 i < cData.dockpars.num_of_genes;
-				 i += item_ct1.get_local_range().get(2))
+				 i += blockDim_x)
 		{
 			if (energy < *best_energy) 	// we need to be careful not to change
 										// best_energy until we had a chance
@@ -387,7 +391,7 @@ gpu_gradient_minAD_kernel(
 
 		// Updating number of ADADELTA iterations (energy evaluations)
 		iteration_cnt = iteration_cnt + 1;
-		if (item_ct1.get_local_id(2) == 0)
+		if (threadIdx_x == 0)
 		{
 			if (energy < *best_energy)
 			{
@@ -442,9 +446,9 @@ gpu_gradient_minAD_kernel(
 	// -----------------------------------------------------------------------------
 
 	// Mapping torsion angles
-	for (uint32_t gene_counter = item_ct1.get_local_id(2) + 3;
+	for (uint32_t gene_counter = threadIdx_x + 3;
 				  gene_counter < cData.dockpars.num_of_genes;
-				  gene_counter += item_ct1.get_local_range().get(2))
+				  gene_counter += blockDim_x)
 	{
 		map_angle(best_genotype[gene_counter]);
 	}
@@ -454,15 +458,15 @@ gpu_gradient_minAD_kernel(
 
 	offset = (run_id * cData.dockpars.pop_size + *entity_id) * GENOTYPE_LENGTH_IN_GLOBMEM;
 
-	for (uint gene_counter = item_ct1.get_local_id(2);
+	for (uint gene_counter = threadIdx_x;
 			  gene_counter < cData.dockpars.num_of_genes;
-			  gene_counter += item_ct1.get_local_range().get(2))
+			  gene_counter += blockDim_x)
 	{
 		pMem_conformations_next[gene_counter + offset] = best_genotype[gene_counter];
 	}
 
 	// Updating eval counter and energy
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
 		cData.pMem_evals_of_new_entities[run_id * cData.dockpars.pop_size + *entity_id] += iteration_cnt;
 		pMem_energies_next[run_id * cData.dockpars.pop_size + *entity_id] = *best_energy;
