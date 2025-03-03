@@ -443,7 +443,7 @@ void gpu_gradient_minAdam(
 		sycl::local_accessor<int, 0> entity_id_acc_ct1(cgh);
 		sycl::local_accessor<float, 0> best_energy_acc_ct1(cgh);
 
-		cgh.parallel_for(
+		cgh.parallel_for<class _kernel_adam>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads),
 				sycl::range<3>(1, 1, threads)

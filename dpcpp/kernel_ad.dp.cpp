@@ -447,7 +447,7 @@ void gpu_gradient_minAD(
 		sycl::local_accessor<int, 0> cons_succ_acc_ct1(cgh);
 		sycl::local_accessor<int, 0> cons_fail_acc_ct1(cgh);
 
-		cgh.parallel_for(
+		cgh.parallel_for<class _kernel_ad>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads),
 				sycl::range<3>(1, 1, threads)

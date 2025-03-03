@@ -76,7 +76,7 @@ void gpu_calc_initpop(
 
 		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(MAX_NUM_OF_ATOMS), cgh);
 
-		cgh.parallel_for(
+		cgh.parallel_for<class _kernel_1>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threadsPerBlock),
 				sycl::range<3>(1, 1, threadsPerBlock)

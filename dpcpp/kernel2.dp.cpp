@@ -67,7 +67,7 @@ void gpu_sum_evals(uint32_t blocks, uint32_t threadsPerBlock)
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
 
-		cgh.parallel_for(
+		cgh.parallel_for<class _kernel_2>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threadsPerBlock),
 				sycl::range<3>(1, 1, threadsPerBlock)

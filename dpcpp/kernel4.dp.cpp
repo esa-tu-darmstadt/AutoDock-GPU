@@ -345,7 +345,7 @@ void gpu_gen_and_eval_newpops(
 		sycl::local_accessor<int, 1> sBestID_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
 		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(MAX_NUM_OF_ATOMS), cgh);
 
-		cgh.parallel_for(
+		cgh.parallel_for<class _kernel_ga>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threadsPerBlock),
 				sycl::range<3>(1, 1, threadsPerBlock)
