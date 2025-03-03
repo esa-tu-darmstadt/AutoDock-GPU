@@ -833,11 +833,14 @@ try
 
 	// Verifying supported sub-group sizes
 	std::vector<size_t> sub_group_sizes = dpct::get_default_queue().get_device().get_info<sycl::info::device::sub_group_sizes>();
-	printf("\nSG sizes supported\n");
+	printf("\nSG size\n    Device support:");
 	for (auto sz : sub_group_sizes) {
-		printf("    %lu", sz);
+		printf(" %lu", sz);
 	}
-	printf("\n");
+	printf("\n    Actual: %u\n", sg_sz);
+
+	bool sg_sz_supported = (std::find(sub_group_sizes.begin(), sub_group_sizes.end(), sg_sz) != sub_group_sizes.end());
+	assert(sg_sz_supported == true);
 
 	// Kernel1
 	#ifdef DOCK_DEBUG

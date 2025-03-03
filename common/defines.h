@@ -178,6 +178,10 @@ enum {C=0,N=1,O=2,H=3,XX=4,P=5,S=6};  // see "bond_index" in the "AD4.1_bound.da
 	#define SYCL_ATOMICS_MEMORY_ORDER sycl::memory_order::release
 #else
 	#define SYCL_ATOMICS_MEMORY_ORDER sycl::memory_order::acq_rel
-#endif 
+#endif
+
+// Defines sub-group size.
+// Defined here so that it can be used in source under both host/ and dpcpp/
+constexpr unsigned int sg_sz = 32;
 
 #endif /* DEFINES_H_ */
