@@ -432,6 +432,9 @@ void reduce_via_matrix_units (
 		joint_matrix_fill(sg, sub_V, 0.0f); // Output: initialize to zeros
 
 		// 1. Accumulate the values: V <- AP + V
+		// In the tripcount: the factor "4" indicates
+		// the number of variables being reduced
+		// (e.g., 3 torques and 1 energy)
 		for(uint i = 0; i < (4 * NUM_OF_THREADS_PER_BLOCK)/(TILE_NELEMS);  i++) {
 			const uint offset = i * TILE_NELEMS; // Moving to next input block
 
