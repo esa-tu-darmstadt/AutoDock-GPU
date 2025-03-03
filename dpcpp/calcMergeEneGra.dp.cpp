@@ -803,7 +803,6 @@ void gpu_calc_energrad(
 	// -------------------------------------------------------
 	// Obtaining energy and translation-related gradients
 	// -------------------------------------------------------
-
 #if defined (DEBUG_ENERGY_KERNEL)
 	intraE = sycl::reduce_over_group(groupIdx, intraE, std::plus<>());
 #endif

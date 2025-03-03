@@ -525,7 +525,7 @@ void gpu_gradient_minAD(
 		/* Reduction using matrix units */
 		#endif
 
-		cgh.parallel_for(
+		cgh.parallel_for<class _kernel_ad>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads),
 				sycl::range<3>(1, 1, threads)
