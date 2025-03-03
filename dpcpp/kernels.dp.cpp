@@ -383,7 +383,7 @@ void custom_matrix_mad_ec (
 
 	// Computing part of [24] (Ootomo et al.)
 	joint_matrix_apply(sg, sub_dC, sub_C, [=](const TC &x, TC &y) {
-		y = y + (x / FACTOR_RED_UF);
+		y = y + SYCL_DIVIDE(x, FACTOR_RED_UF);
 	});
 }
 #endif
