@@ -22,6 +22,10 @@ UNAME := $(shell uname)
 
 CUDA_TARGET = 80
 
+ifeq ($(XMX), ON)
+	INTELXMX=-DUSE_XMX
+endif
+
 ifeq ($(DEVICE), CPU)
 	DEV =-DCPU_DEVICE
 else ifeq ($(DEVICE), GPU)
@@ -81,12 +85,21 @@ BIN := $(wildcard $(TARGET)*)
 NUMWI=
 
 ifeq ($(NUMWI), 8)
+ifeq ($(XMX), ON)
+$(error NUMWI needs to be at least 64 with XMX=ON)
+endif
 	NWI=-DN8WI
 	TARGET:=$(TARGET)_8wi
 else ifeq ($(NUMWI), 16)
+ifeq ($(XMX), ON)
+$(error NUMWI needs to be at least 64 with XMX=ON)
+endif
 	NWI=-DN16WI
 	TARGET:=$(TARGET)_16wi
 else ifeq ($(NUMWI), 32)
+ifeq ($(XMX), ON)
+$(error NUMWI needs to be at least 64 with XMX=ON)
+endif
 	NWI=-DN32WI
 	TARGET:=$(TARGET)_32wi
 else ifeq ($(NUMWI), 64)
@@ -225,7 +238,7 @@ unlink-code:
 	rm -f $(HOST_INC_DIR)/performdocking.h $(HOST_SRC_DIR)/performdocking.cpp
 
 kernels: $(KERNEL_SRC)
-	$(DPCPP) $(NWI) $(REP) $(DPCPP_FLAGS) $(IFLAGS) $(OPT) $(DPCPP_INCLUDES) -c $(KRNL_DIR)/kernels.dp.cpp
+	$(DPCPP) $(NWI) $(REP) $(DPCPP_FLAGS) $(IFLAGS) $(OPT) $(DPCPP_INCLUDES) $(INTELXMX) -c $(KRNL_DIR)/kernels.dp.cpp
 
 otool: unlink-code
 	@echo "Building" $(TOOL_TARGET) "..."
@@ -233,7 +246,7 @@ otool: unlink-code
 	$(shell ls $(HOST_SRC_DIR)/*.cpp) \
 	$(TOOL_CFLAGS) \
 	-o$(BIN_DIR)/$(TOOL_TARGET) \
-	$(PIPELINE) $(OPT) -DTOOLMODE $(REP)
+	$(PIPELINE) $(INTELXMX) $(OPT) -DTOOLMODE $(REP)
 
 odock: check-env-all kernels link-code
 	@echo "Building" $(TARGET) "..."
@@ -242,7 +255,7 @@ odock: check-env-all kernels link-code
 	$(CFLAGS) \
 	$(LIB_XeGPU) \
 	-o$(BIN_DIR)/$(TARGET) \
-	$(DEV) $(NWI) $(PIPELINE) $(OPT) $(DD) $(REP) $(KFLAGS)
+	$(DEV) $(NWI) $(PIPELINE) $(INTELXMX) $(OPT) $(DD) $(REP) $(KFLAGS)
 
 # Example
 # 1ac8: for testing gradients of translation and rotation genes
@@ -255,6 +268,12 @@ NGEN     := 27000
 POPSIZE  := 150
 TESTNAME := test
 TESTLS   := sw
+
+ifeq ($(XMX), ON)
+ifneq ($(TESTLS), ad)
+$(error XMX=$(XMX) and TESTLS=$(TESTLS). XMX works only with ADADELTA!)
+endif
+endif
 
 test: odock
 	$(BIN_DIR)/$(TARGET) \
