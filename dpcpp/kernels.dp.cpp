@@ -68,6 +68,9 @@ constexpr int tM = 8;
 constexpr int tN = 16;
 constexpr int tK = 8;
 
+// Tripcount for matrix C as a workaround when wi_data_C.length() is buggy
+constexpr int tripcountC = (tM * tN)/sg_sz;
+
 using tf32 = sycl::ext::oneapi::experimental::matrix::precision::tf32;
 using TA = tf32;
 using TB = tf32;
@@ -275,7 +278,6 @@ using T_JM_A = joint_matrix<sycl::sub_group, TA, use::a, tM, tK, layout::row_maj
 using T_JM_B = joint_matrix<sycl::sub_group, TB, use::b, tK, tN, layout::col_major>;
 using T_JM_C = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
 
-
 #ifdef XMX_EC
 // Implementation based on paper by Ootomo et al.:
 // "Recovering single precision accuracy from Tensor Cores while surpassing the FP32 theoretical peak performance"
@@ -335,7 +337,7 @@ void custom_matrix_mad_ec (
 	//joint_matrix_copy(sg, sub_C_tmp, sub_B);
 	auto wi_data_C = sycl::ext::oneapi::detail::get_wi_data(sg, sub_C_tmp);
 	auto wi_data_B = sycl::ext::oneapi::detail::get_wi_data(sg, sub_B);
-	for (int i = 0; i < /*wi_data_C.length()*/4; i++) { wi_data_B[i] = (float)(wi_data_C[i]); }
+	for (int i = 0; i < /*wi_data_C.length()*/ /*4*/ tripcountC; i++) { wi_data_B[i] = (float)(wi_data_C[i]); }
 
 	// Computing [20] (Ootomo et al.)
 	for (uint i = wi_Id_sg; i < tM * tK; i+=sg_Size) { dA_tf32[i] = round_to_tf32( (A_fp32[i] - (float)(A_tf32[i])) * FACTOR_RED_UF ); }
@@ -365,7 +367,7 @@ void custom_matrix_mad_ec (
 	//joint_matrix_copy(sg, sub_dC_tmp, sub_dB);
 	auto wi_data_dC = sycl::ext::oneapi::detail::get_wi_data(sg, sub_dC_tmp);
 	auto wi_data_dB = sycl::ext::oneapi::detail::get_wi_data(sg, sub_dB);
-	for (int i = 0; i < /*wi_data_C.length()*/4; i++) { wi_data_dB[i] = (float)(wi_data_dC[i]); }
+	for (int i = 0; i < /*wi_data_C.length()*/ /*4*/ tripcountC; i++) { wi_data_dB[i] = (float)(wi_data_dC[i]); }
 
 	// Computing part of [24] (Ootomo et al.)
 	joint_matrix_mad(sg, sub_dC, sub_dA, sub_B, sub_dC);
