@@ -25,8 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef GPUDATADOTH
 #define GPUDATADOTH
-#include <sycl/sycl.hpp>
-#include <dpct/dpct.hpp>
 #include <float.h>
 
 static const int   TERMBITS         = 10;

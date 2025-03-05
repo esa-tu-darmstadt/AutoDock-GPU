@@ -1,5 +1,3 @@
-#include <sycl/sycl.hpp>
-#include <dpct/dpct.hpp>
 /*
 
 AutoDock-GPU, an OpenCL implementation of AutoDock 4.2 running a Lamarckian
