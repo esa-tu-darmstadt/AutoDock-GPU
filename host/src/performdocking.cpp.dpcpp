@@ -324,69 +324,71 @@ try
 {
 	if(cData.devnum>-2) return; // device not set up
 
+	sycl::queue queue;
+
 	int status;
 	// Release all CUDA objects
 	// Constant objects
 
-	status = (sycl::free(cData.pKerconst_interintra, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_interintra, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_interintra\n");
 
-	status = (sycl::free(cData.pKerconst_intracontrib, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_intracontrib, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_intracontrib\n");
 
-	status = (sycl::free(cData.pKerconst_intra, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_intra, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_intra\n");
 
-	status = (sycl::free(cData.pKerconst_rotlist, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_rotlist, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_rotlist\n");
 
-	status = (sycl::free(cData.pKerconst_conform, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_conform, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_conform\n");
 
-	status = (sycl::free(cData.pMem_rotbonds_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_rotbonds_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_rotbonds_const");
 
-	status = (sycl::free(cData.pMem_rotbonds_atoms_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_rotbonds_atoms_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_rotbonds_atoms_const");
 
-	status = (sycl::free(cData.pMem_num_rotating_atoms_per_rotbond_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_num_rotating_atoms_per_rotbond_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing " "cData.pMem_num_rotating_atoms_per_rotbond_const");
 
-	status = (sycl::free(cData.pMem_angle_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_angle_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_angle_const");
 
-	status = (sycl::free(cData.pMem_dependence_on_theta_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_dependence_on_theta_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_dependence_on_theta_const");
 
-	status = (sycl::free(cData.pMem_dependence_on_rotangle_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_dependence_on_rotangle_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_dependence_on_rotangle_const");
 
 	// Non-constant
 	if(tData.pMem_fgrids)
 	{
-		status = (sycl::free(tData.pMem_fgrids, dpct::get_default_queue()), 0);
+		status = (sycl::free(tData.pMem_fgrids, queue), 0);
 		RTERROR(status, "cudaFree: error freeing pMem_fgrids");
 	}
 
-	status = (sycl::free(tData.pMem_conformations1, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_conformations1, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_conformations1");
 
-	status = (sycl::free(tData.pMem_conformations2, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_conformations2, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_conformations2");
 
-	status = (sycl::free(tData.pMem_energies1, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_energies1, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_energies1");
 
-	status = (sycl::free(tData.pMem_energies2, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_energies2, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_energies2");
 
-	status = (sycl::free(tData.pMem_evals_of_new_entities, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_evals_of_new_entities, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_evals_of_new_entities");
 
-	status = (sycl::free(tData.pMem_gpu_evals_of_runs, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_gpu_evals_of_runs, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_gpu_evals_of_runs");
 
-	status = (sycl::free(tData.pMem_prng_states, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_prng_states, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_prng_states");
 
 	free(tData.device_name);
