@@ -52,7 +52,6 @@ static const float MAXFORCE         = FLT_MAX / 100.0f; // Used to cap absurd gr
 {	\
 	int status = 0;	\
 	XeDeviceSynchronize();	\
-	RTERROR(status, s);	\
 }
 
 typedef struct dpct_type_74f5ca
