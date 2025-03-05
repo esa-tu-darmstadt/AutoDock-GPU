@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define invpi2 1.0f/(PI_TIMES_2)
 
 // Magic positive integer exponent power ... -AT
-__dpct_inline__
+__inline__ __attribute__((always_inline))
 float positive_power(
 	float a,
 	uint exp)
@@ -45,7 +45,7 @@ float positive_power(
 }
 
 SYCL_EXTERNAL
-__dpct_inline__
+__inline__ __attribute__((always_inline))
 float fmod_pi2(float x)
 {
 	return x-(int)(invpi2*x)*PI_TIMES_2;
@@ -60,7 +60,7 @@ float fmod_pi2(float x)
 #define fast_acos_o -(fast_acos_a+fast_acos_b+fast_acos_c+fast_acos_d)
 
 SYCL_EXTERNAL
-__dpct_inline__
+__inline__ __attribute__((always_inline))
 float fast_acos(float cosine)
 {
 	float x = sycl::fabs(cosine);
@@ -77,7 +77,7 @@ float fast_acos(float cosine)
 }
 
 SYCL_EXTERNAL
-__dpct_inline__
+__inline__ __attribute__((always_inline))
 sycl::float4 cross(
 	sycl::float3 &u,
 	sycl::float3 &v)
@@ -90,7 +90,7 @@ sycl::float4 cross(
 	return result;
 }
 
-__dpct_inline__
+__inline__ __attribute__((always_inline))
 sycl::float4 cross(
 	sycl::float4 &u,
 	sycl::float4 &v)
@@ -104,7 +104,7 @@ sycl::float4 cross(
 }
 
 SYCL_EXTERNAL
-__dpct_inline__
+__inline__ __attribute__((always_inline))
 sycl::float4 quaternion_multiply(
 	sycl::float4 a,
 	sycl::float4 b)
@@ -119,7 +119,7 @@ sycl::float4 quaternion_multiply(
 }
 
 SYCL_EXTERNAL
-__dpct_inline__
+__inline__ __attribute__((always_inline))
 sycl::float4 quaternion_rotate(
 	sycl::float4 v,
 	sycl::float4 rot)
