@@ -61,13 +61,13 @@ gpu_calc_initpop_kernel(
 }
 
 void gpu_calc_initpop(
-                      uint32_t blocks,
-                      uint32_t threadsPerBlock,
-                      float*   pConformations_current,
-                      float*   pEnergies_current
-                     )
+	sycl::queue &queue,
+	uint32_t blocks,
+	uint32_t threadsPerBlock,
+	float*   pConformations_current,
+	float*   pEnergies_current)
 {
-	dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+	queue.submit([&](sycl::handler &cgh) {
 		extern dpct::constant_memory<GpuData, 0> cData;
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
@@ -88,7 +88,7 @@ void gpu_calc_initpop(
 					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
 				);
 			});
-	});
+	}).wait();
 
 	LAUNCHERROR("gpu_calc_initpop_kernel");
 }

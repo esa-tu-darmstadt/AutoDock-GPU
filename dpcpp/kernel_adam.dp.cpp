@@ -424,15 +424,15 @@ gpu_gradient_minAdam_kernel(
 }
 
 void gpu_gradient_minAdam(
-                          uint32_t blocks,
-                          uint32_t threads,
-                          float* pMem_conformations_next,
-                          float* pMem_energies_next
-)
+	sycl::queue &queue,
+	uint32_t blocks,
+	uint32_t threads,
+	float* pMem_conformations_next,
+	float* pMem_energies_next)
 {
 	size_t sz_shared = (2 * cpuData.dockpars.num_of_atoms * sizeof(sycl::float3)) + (5 * cpuData.dockpars.num_of_genes * sizeof(float));
 
-	dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+	queue.submit([&](sycl::handler &cgh) {
 		extern dpct::constant_memory<GpuData, 0> cData;
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
@@ -457,7 +457,7 @@ void gpu_gradient_minAdam(
 					best_energy_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
 				);
 		});
-	});
+	}).wait();
 
 	LAUNCHERROR("gpu_gradient_minAdam_kernel");
 }

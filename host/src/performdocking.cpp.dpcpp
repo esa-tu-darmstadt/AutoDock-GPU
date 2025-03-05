@@ -47,6 +47,7 @@ void SetKernelsGpuData(GpuData* pData);
 void GetKernelsGpuData(GpuData* pData);
 
 void gpu_calc_initpop(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threadsPerBlock,
 	float*   pConformations_current,
@@ -54,11 +55,13 @@ void gpu_calc_initpop(
 );
 
 void gpu_sum_evals(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threadsPerBlock
 );
 
 void gpu_gen_and_eval_newpops(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threadsPerBlock,
 	float*   pMem_conformations_current,
@@ -68,6 +71,7 @@ void gpu_gen_and_eval_newpops(
 );
 
 void gpu_gradient_minAD(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threads,
 	float*   pMem_conformations_next,
@@ -75,6 +79,7 @@ void gpu_gradient_minAD(
 );
 
 void gpu_gradient_minAdam(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threads,
 	float*   pMem_conformations_next,
@@ -82,6 +87,7 @@ void gpu_gradient_minAdam(
 );
 
 void gpu_perform_LS(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threads,
 	float*   pMem_conformations_next,
@@ -847,7 +853,7 @@ try
 	para_printf("%-25s", "\tK_INIT");fflush(stdout);
 	XeDeviceSynchronize();
 	#endif
-	gpu_calc_initpop(kernel1_gxsize, kernel1_lxsize, pMem_conformations_current, pMem_energies_current);
+	gpu_calc_initpop(queue, kernel1_gxsize, kernel1_lxsize, pMem_conformations_current, pMem_energies_current);
 	#ifdef DOCK_DEBUG
 	XeDeviceSynchronize();
 	para_printf("%15s" ," ... Finished\n");fflush(stdout);
@@ -858,7 +864,7 @@ try
 	#ifdef DOCK_DEBUG
 	para_printf("%-25s", "\tK_EVAL");fflush(stdout);
 	#endif
-	gpu_sum_evals(kernel2_gxsize, kernel2_lxsize);
+	gpu_sum_evals(queue, kernel2_gxsize, kernel2_lxsize);
 	#ifdef DOCK_DEBUG
 	XeDeviceSynchronize();
 	para_printf("%15s" ," ... Finished\n");fflush(stdout);
@@ -932,7 +938,7 @@ try
 		#endif
 
 		//runKernel1D(command_queue,kernel4,kernel4_gxsize,kernel4_lxsize,&time_start_kernel,&time_end_kernel);
-		gpu_gen_and_eval_newpops(kernel4_gxsize, kernel4_lxsize, pMem_conformations_current, pMem_energies_current, pMem_conformations_next, pMem_energies_next);
+		gpu_gen_and_eval_newpops(queue, kernel4_gxsize, kernel4_lxsize, pMem_conformations_current, pMem_energies_current, pMem_conformations_next, pMem_energies_next);
 		#ifdef DOCK_DEBUG
 		para_printf("%15s", " ... Finished\n");fflush(stdout);
 		#endif
@@ -947,7 +953,7 @@ try
 				para_printf("%-25s", "\tK_LS_SOLISWETS");fflush(stdout);
 				#endif
 				//runKernel1D(command_queue,kernel3,kernel3_gxsize,kernel3_lxsize,&time_start_kernel,&time_end_kernel);
-				gpu_perform_LS(kernel3_gxsize, kernel3_lxsize, pMem_conformations_next, pMem_energies_next);                
+				gpu_perform_LS(queue, kernel3_gxsize, kernel3_lxsize, pMem_conformations_next, pMem_energies_next);
 				#ifdef DOCK_DEBUG
 				para_printf("%15s" ," ... Finished\n");fflush(stdout);
 				#endif
@@ -984,7 +990,7 @@ try
 				para_printf("%-25s", "\tK_LS_GRAD_ADADELTA");fflush(stdout);
 				#endif
 				// runKernel1D(command_queue,kernel7,kernel7_gxsize,kernel7_lxsize,&time_start_kernel,&time_end_kernel);
-				gpu_gradient_minAD(kernel7_gxsize, kernel7_lxsize, pMem_conformations_next, pMem_energies_next);
+				gpu_gradient_minAD(queue, kernel7_gxsize, kernel7_lxsize, pMem_conformations_next, pMem_energies_next);
 				#ifdef DOCK_DEBUG
 				para_printf("%15s" ," ... Finished\n");fflush(stdout);
 				#endif
@@ -995,7 +1001,7 @@ try
 				para_printf("%-25s", "\tK_LS_GRAD_ADAM");fflush(stdout);
 				#endif
 				// runKernel1D(command_queue,kernel8,kernel8_gxsize,kernel8_lxsize,&time_start_kernel,&time_end_kernel);
-				gpu_gradient_minAdam(kernel8_gxsize, kernel8_lxsize, pMem_conformations_next, pMem_energies_next);
+				gpu_gradient_minAdam(queue, kernel8_gxsize, kernel8_lxsize, pMem_conformations_next, pMem_energies_next);
 				#ifdef DOCK_DEBUG
 				para_printf("%15s" ," ... Finished\n");fflush(stdout);
 				#endif
@@ -1010,7 +1016,7 @@ try
 		para_printf("%-25s", "\tK_EVAL");fflush(stdout);
 		#endif
 		//runKernel1D(command_queue,kernel2,kernel2_gxsize,kernel2_lxsize,&time_start_kernel,&time_end_kernel);
-		gpu_sum_evals(kernel2_gxsize, kernel2_lxsize);
+		gpu_sum_evals(queue, kernel2_gxsize, kernel2_lxsize);
 		#ifdef DOCK_DEBUG
 		para_printf("%15s" ," ... Finished\n");fflush(stdout);
 		#endif
