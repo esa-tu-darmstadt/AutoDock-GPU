@@ -88,7 +88,5 @@ void gpu_calc_initpop(
 					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
 				);
 			});
-	}).wait();
-
-	LAUNCHERROR("gpu_calc_initpop_kernel");
+	}).wait_and_throw();
 }

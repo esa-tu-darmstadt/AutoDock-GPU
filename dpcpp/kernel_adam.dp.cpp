@@ -457,7 +457,5 @@ void gpu_gradient_minAdam(
 					best_energy_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
 				);
 		});
-	}).wait();
-
-	LAUNCHERROR("gpu_gradient_minAdam_kernel");
+	}).wait_and_throw();
 }

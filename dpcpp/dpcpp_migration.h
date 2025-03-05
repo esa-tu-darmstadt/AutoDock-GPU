@@ -25,8 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef DPCPP_MIGRATION_H
 #define DPCPP_MIGRATION_H
 
-#define XeDeviceSynchronize() dpct::get_default_queue().wait_and_throw();
-
 #define cudaMemGetInfo(x, y) ad_MemGetInfo(x, y)
 
 inline int ad_MemGetInfo(size_t *freemem, size_t *totalmem)

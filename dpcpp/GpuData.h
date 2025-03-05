@@ -47,12 +47,6 @@ static const float MAXFORCE         = FLT_MAX / 100.0f; // Used to cap absurd gr
 			exit(-1);	\
 	}
 
-// LAUNCHERROR is always synchronous in the SYCL version
-#define LAUNCHERROR(s)	\
-{	\
-	XeDeviceSynchronize();	\
-}
-
 typedef struct dpct_type_74f5ca
 {
 	int             num_of_atoms;

@@ -367,7 +367,5 @@ void gpu_gen_and_eval_newpops(
 					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
 				);
 		});
-	}).wait();
-
-	LAUNCHERROR("gpu_gen_and_eval_newpops_kernel");
+	}).wait_and_throw();
 }

@@ -79,7 +79,5 @@ void gpu_sum_evals(
 					*cData_ptr_ct1
 				);
 		});
-	}).wait();
-
-	LAUNCHERROR("gpu_sum_evals_kernel");
+	}).wait_and_throw();
 }

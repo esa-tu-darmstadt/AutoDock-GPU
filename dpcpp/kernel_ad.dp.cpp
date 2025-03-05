@@ -465,7 +465,5 @@ void gpu_gradient_minAD(
 					cons_fail_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
 				);
 		});
-	}).wait();
-
-	LAUNCHERROR("gpu_gradient_minAD_kernel");
+	}).wait_and_throw();
 }
