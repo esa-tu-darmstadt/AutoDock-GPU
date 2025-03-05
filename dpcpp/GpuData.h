@@ -50,7 +50,6 @@ static const float MAXFORCE         = FLT_MAX / 100.0f; // Used to cap absurd gr
 // LAUNCHERROR is always synchronous in the SYCL version
 #define LAUNCHERROR(s)	\
 {	\
-	int status = 0;	\
 	XeDeviceSynchronize();	\
 }
 
