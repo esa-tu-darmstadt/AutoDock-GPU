@@ -851,11 +851,11 @@ try
 	#ifdef DOCK_DEBUG
 	para_printf("\nExecution starts:\n\n");
 	para_printf("%-25s", "\tK_INIT");fflush(stdout);
-	XeDeviceSynchronize();
+	queue.wait_and_throw();
 	#endif
 	gpu_calc_initpop(queue, kernel1_gxsize, kernel1_lxsize, pMem_conformations_current, pMem_energies_current);
 	#ifdef DOCK_DEBUG
-	XeDeviceSynchronize();
+	queue.wait_and_throw();
 	para_printf("%15s" ," ... Finished\n");fflush(stdout);
 	#endif
 	// End of Kernel1
@@ -866,7 +866,7 @@ try
 	#endif
 	gpu_sum_evals(queue, kernel2_gxsize, kernel2_lxsize);
 	#ifdef DOCK_DEBUG
-	XeDeviceSynchronize();
+	queue.wait_and_throw();
 	para_printf("%15s" ," ... Finished\n");fflush(stdout);
 	#endif
 	// End of Kernel2
