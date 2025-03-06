@@ -320,15 +320,15 @@ gpu_gen_and_eval_newpops_kernel(
 }
 
 void gpu_gen_and_eval_newpops(
-                              uint32_t blocks,
-                              uint32_t threadsPerBlock,
-                              float*   pMem_conformations_current,
-                              float*   pMem_energies_current,
-                              float*   pMem_conformations_next,
-                              float*   pMem_energies_next
-                             )
+	sycl::queue &queue,
+	uint32_t blocks,
+	uint32_t threadsPerBlock,
+	float*   pMem_conformations_current,
+	float*   pMem_energies_current,
+	float*   pMem_conformations_next,
+	float*   pMem_energies_next)
 {
-	dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+	queue.submit([&](sycl::handler &cgh) {
 		extern dpct::constant_memory<GpuData, 0> cData;
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
@@ -367,7 +367,5 @@ void gpu_gen_and_eval_newpops(
 					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
 				);
 		});
-	});
-
-	LAUNCHERROR("gpu_gen_and_eval_newpops_kernel");
+	}).wait_and_throw();
 }

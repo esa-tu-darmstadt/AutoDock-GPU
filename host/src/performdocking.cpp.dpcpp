@@ -47,6 +47,7 @@ void SetKernelsGpuData(GpuData* pData);
 void GetKernelsGpuData(GpuData* pData);
 
 void gpu_calc_initpop(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threadsPerBlock,
 	float*   pConformations_current,
@@ -54,11 +55,13 @@ void gpu_calc_initpop(
 );
 
 void gpu_sum_evals(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threadsPerBlock
 );
 
 void gpu_gen_and_eval_newpops(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threadsPerBlock,
 	float*   pMem_conformations_current,
@@ -68,6 +71,7 @@ void gpu_gen_and_eval_newpops(
 );
 
 void gpu_gradient_minAD(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threads,
 	float*   pMem_conformations_next,
@@ -75,6 +79,7 @@ void gpu_gradient_minAD(
 );
 
 void gpu_gradient_minAdam(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threads,
 	float*   pMem_conformations_next,
@@ -82,6 +87,7 @@ void gpu_gradient_minAdam(
 );
 
 void gpu_perform_LS(
+	sycl::queue &queue,
 	uint32_t blocks,
 	uint32_t threads,
 	float*   pMem_conformations_next,
@@ -140,8 +146,8 @@ void setup_gpu_for_docking(
 	GpuData &cData,
 	GpuTempData &tData)
 try {
-	dpct::device_ext &dev_ct1 = dpct::get_current_device();
-	sycl::queue &q_ct1 = dev_ct1.default_queue();
+	sycl::queue queue;
+
 	if(cData.devnum<-1) return; // device already setup
 
 	auto const t0 = std::chrono::steady_clock::now();
@@ -165,7 +171,7 @@ try {
 	}
 
 	if (cData.devnum<0)
-		status = (sycl::free(NULL, dpct::get_default_queue()),
+		status = (sycl::free(NULL, queue),
 				  0); // Trick driver into creating context on current device
 	else
 	{
@@ -225,89 +231,85 @@ try {
 	*/
 
 	// Allocate kernel constant GPU memory
-	status = (cData.pKerconst_interintra = sycl::malloc_device<kernelconstant_interintra>(1, dpct::get_default_queue()), 0);
+	status = (cData.pKerconst_interintra = sycl::malloc_device<kernelconstant_interintra>(1, queue), 0);
 	RTERROR(status, "cData.pKerconst_interintra: failed to allocate GPU memory.\n");
 
-	status = (cData.pKerconst_intracontrib = sycl::malloc_device<kernelconstant_intracontrib>(1, dpct::get_default_queue()), 0);
+	status = (cData.pKerconst_intracontrib = sycl::malloc_device<kernelconstant_intracontrib>(1, queue), 0);
 	RTERROR(status,"cData.pKerconst_intracontrib: failed to allocate GPU memory.\n");
 
-	status = (cData.pKerconst_intra = sycl::malloc_device<kernelconstant_intra>(1, dpct::get_default_queue()), 0);
+	status = (cData.pKerconst_intra = sycl::malloc_device<kernelconstant_intra>(1, queue), 0);
 	RTERROR(status, "cData.pKerconst_intra: failed to allocate GPU memory.\n");
 
-	status = (cData.pKerconst_rotlist = sycl::malloc_device<kernelconstant_rotlist>(1, dpct::get_default_queue()), 0);
+	status = (cData.pKerconst_rotlist = sycl::malloc_device<kernelconstant_rotlist>(1, queue), 0);
 	RTERROR(status, "cData.pKerconst_rotlist: failed to allocate GPU memory.\n");
 
-	status = (cData.pKerconst_conform = sycl::malloc_device<kernelconstant_conform>(1, dpct::get_default_queue()), 0);
+	status = (cData.pKerconst_conform = sycl::malloc_device<kernelconstant_conform>(1, queue), 0);
 	RTERROR(status, "cData.pKerconst_conform: failed to allocate GPU memory.\n");
 
 	// Allocate mem data
-	status = (cData.pMem_angle_const = sycl::malloc_device<float>(1000, dpct::get_default_queue()), 0);
+	status = (cData.pMem_angle_const = sycl::malloc_device<float>(1000, queue), 0);
 	RTERROR(status, "cData.pMem_angle_const: failed to allocate GPU memory.\n");
 
-	status = (cData.pMem_dependence_on_theta_const = sycl::malloc_device<float>(1000, dpct::get_default_queue()), 0);
+	status = (cData.pMem_dependence_on_theta_const = sycl::malloc_device<float>(1000, queue), 0);
 	RTERROR(status, "cData.pMem_dependence_on_theta_const: failed to " "allocate GPU memory.\n");
 
-	status = (cData.pMem_dependence_on_rotangle_const = sycl::malloc_device<float>(1000, dpct::get_default_queue()), 0);
+	status = (cData.pMem_dependence_on_rotangle_const = sycl::malloc_device<float>(1000, queue), 0);
 	RTERROR(status, "cData.pMem_dependence_on_rotangle_const: failed to " "allocate GPU memory.\n");
 
-	status = (cData.pMem_rotbonds_const = sycl::malloc_device<int>(2 * MAX_NUM_OF_ROTBONDS, dpct::get_default_queue()), 0);
+	status = (cData.pMem_rotbonds_const = sycl::malloc_device<int>(2 * MAX_NUM_OF_ROTBONDS, queue), 0);
 	RTERROR(status, "cData.pMem_rotbonds_const: failed to allocate GPU memory.\n");
 
-	status = (cData.pMem_rotbonds_atoms_const = sycl::malloc_device<int>(MAX_NUM_OF_ATOMS * MAX_NUM_OF_ROTBONDS, dpct::get_default_queue()), 0);
+	status = (cData.pMem_rotbonds_atoms_const = sycl::malloc_device<int>(MAX_NUM_OF_ATOMS * MAX_NUM_OF_ROTBONDS, queue), 0);
 	RTERROR(status, "cData.pMem_rotbonds_atoms_const: failed to allocate " "GPU memory.\n");
 
-	status = (cData.pMem_num_rotating_atoms_per_rotbond_const = sycl::malloc_device<int>(MAX_NUM_OF_ROTBONDS, dpct::get_default_queue()), 0);
+	status = (cData.pMem_num_rotating_atoms_per_rotbond_const = sycl::malloc_device<int>(MAX_NUM_OF_ROTBONDS, queue), 0);
 	RTERROR(status, "cData.pMem_num_rotiating_atoms_per_rotbond_const: " "failed to allocate GPU memory.\n");
 
 	// Upload mem data
-	dpct::get_default_queue().memcpy(cData.pMem_angle_const, angle, 1000 * sizeof(float)).wait();
+	queue.memcpy(cData.pMem_angle_const, angle, 1000 * sizeof(float)).wait();
 	RTERROR(status, "cData.pMem_angle_const: failed to upload to GPU memory.\n");
 	
-	dpct::get_default_queue()
-			.memcpy(cData.pMem_dependence_on_theta_const, dependence_on_theta, 1000 * sizeof(float))
-			.wait();
+	queue.memcpy(cData.pMem_dependence_on_theta_const, dependence_on_theta, 1000 * sizeof(float)).wait();
 	RTERROR(status, "cData.pMem_dependence_on_theta_const: failed to " "upload to GPU memory.\n");
 
-	dpct::get_default_queue()
-			.memcpy(cData.pMem_dependence_on_rotangle_const, dependence_on_rotangle, 1000 * sizeof(float))
-			.wait();
+	queue.memcpy(cData.pMem_dependence_on_rotangle_const, dependence_on_rotangle, 1000 * sizeof(float)).wait();
 	RTERROR(status, "cData.pMem_dependence_on_rotangle_const: failed to " "upload to GPU memory.\n");
 
 	// Allocate temporary data - JL TODO - Are these sizes correct?
 	if(cData.preallocated_gridsize>0)
 	{
-		status = (tData.pMem_fgrids = sycl::malloc_device<float>(cData.preallocated_gridsize, dpct::get_default_queue()), 0);
+		status = (tData.pMem_fgrids = sycl::malloc_device<float>(cData.preallocated_gridsize, queue), 0);
 		RTERROR(status, "pMem_fgrids: failed to allocate GPU memory.\n");
 	}
 
 	size_t size_populations = MAX_NUM_OF_RUNS * MAX_POPSIZE * GENOTYPE_LENGTH_IN_GLOBMEM * sizeof(float);
 
-	status = (((tData.pMem_conformations1) = (float *)sycl::malloc_device(size_populations, dpct::get_default_queue())), 0);
+	status = (((tData.pMem_conformations1) = (float *)sycl::malloc_device(size_populations, queue)), 0);
 	RTERROR(status, "pMem_conformations1: failed to allocate GPU memory.\n");
 
-	status = (((tData.pMem_conformations2) = (float *)sycl::malloc_device(size_populations, dpct::get_default_queue())), 0);
+	status = (((tData.pMem_conformations2) = (float *)sycl::malloc_device(size_populations, queue)), 0);
 	RTERROR(status, "pMem_conformations2: failed to allocate GPU memory.\n");
 
 	size_t size_energies = MAX_POPSIZE * MAX_NUM_OF_RUNS * sizeof(float);
 
-	status = (((tData.pMem_energies1) = (float *)sycl::malloc_device(size_energies, dpct::get_default_queue())), 0);
+	status = (((tData.pMem_energies1) = (float *)sycl::malloc_device(size_energies, queue)), 0);
 	RTERROR(status, "pMem_energies1: failed to allocate GPU memory.\n");
 
-	status = (((tData.pMem_energies2) = (float *)sycl::malloc_device(size_energies, dpct::get_default_queue())), 0);
+	status = (((tData.pMem_energies2) = (float *)sycl::malloc_device(size_energies, queue)), 0);
 	RTERROR(status, "pMem_energies2: failed to allocate GPU memory.\n");
 
-	status = (((tData.pMem_evals_of_new_entities) = sycl::malloc_device<int>(MAX_POPSIZE * MAX_NUM_OF_RUNS, dpct::get_default_queue())), 0);
+	status = (((tData.pMem_evals_of_new_entities) = sycl::malloc_device<int>(MAX_POPSIZE * MAX_NUM_OF_RUNS, queue)), 0);
 	RTERROR(status, "pMem_evals_of_new_Entities: failed to allocate GPU memory.\n");
 
 	size_t size_evals_of_runs = MAX_NUM_OF_RUNS*sizeof(int);
 
-	status = (((tData.pMem_gpu_evals_of_runs) = (int *)sycl::malloc_shared(size_evals_of_runs, dpct::get_default_queue())), 0);
+	status = (((tData.pMem_gpu_evals_of_runs) = (int *)sycl::malloc_shared(size_evals_of_runs, queue)), 0);
 	RTERROR(status, "pMem_gpu_evals_of_runs: failed to allocate GPU memory.\n");
 
 	size_t blocksPerGridForEachEntity = MAX_POPSIZE * MAX_NUM_OF_RUNS;
 	size_t size_prng_seeds = blocksPerGridForEachEntity * NUM_OF_THREADS_PER_BLOCK * sizeof(unsigned int);
 
-	status = (((tData.pMem_prng_states) = (uint32_t *)sycl::malloc_device(size_prng_seeds, dpct::get_default_queue())), 0);
+	status = (((tData.pMem_prng_states) = (uint32_t *)sycl::malloc_device(size_prng_seeds, queue)), 0);
 	RTERROR(status, "pMem_prng_states: failed to allocate GPU memory.\n");
 }
 catch (sycl::exception const &exc)
@@ -324,69 +326,71 @@ try
 {
 	if(cData.devnum>-2) return; // device not set up
 
+	sycl::queue queue;
+
 	int status;
 	// Release all CUDA objects
 	// Constant objects
 
-	status = (sycl::free(cData.pKerconst_interintra, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_interintra, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_interintra\n");
 
-	status = (sycl::free(cData.pKerconst_intracontrib, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_intracontrib, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_intracontrib\n");
 
-	status = (sycl::free(cData.pKerconst_intra, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_intra, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_intra\n");
 
-	status = (sycl::free(cData.pKerconst_rotlist, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_rotlist, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_rotlist\n");
 
-	status = (sycl::free(cData.pKerconst_conform, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pKerconst_conform, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pKerconst_conform\n");
 
-	status = (sycl::free(cData.pMem_rotbonds_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_rotbonds_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_rotbonds_const");
 
-	status = (sycl::free(cData.pMem_rotbonds_atoms_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_rotbonds_atoms_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_rotbonds_atoms_const");
 
-	status = (sycl::free(cData.pMem_num_rotating_atoms_per_rotbond_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_num_rotating_atoms_per_rotbond_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing " "cData.pMem_num_rotating_atoms_per_rotbond_const");
 
-	status = (sycl::free(cData.pMem_angle_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_angle_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_angle_const");
 
-	status = (sycl::free(cData.pMem_dependence_on_theta_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_dependence_on_theta_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_dependence_on_theta_const");
 
-	status = (sycl::free(cData.pMem_dependence_on_rotangle_const, dpct::get_default_queue()), 0);
+	status = (sycl::free(cData.pMem_dependence_on_rotangle_const, queue), 0);
 	RTERROR(status, "cudaFree: error freeing cData.pMem_dependence_on_rotangle_const");
 
 	// Non-constant
 	if(tData.pMem_fgrids)
 	{
-		status = (sycl::free(tData.pMem_fgrids, dpct::get_default_queue()), 0);
+		status = (sycl::free(tData.pMem_fgrids, queue), 0);
 		RTERROR(status, "cudaFree: error freeing pMem_fgrids");
 	}
 
-	status = (sycl::free(tData.pMem_conformations1, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_conformations1, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_conformations1");
 
-	status = (sycl::free(tData.pMem_conformations2, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_conformations2, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_conformations2");
 
-	status = (sycl::free(tData.pMem_energies1, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_energies1, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_energies1");
 
-	status = (sycl::free(tData.pMem_energies2, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_energies2, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_energies2");
 
-	status = (sycl::free(tData.pMem_evals_of_new_entities, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_evals_of_new_entities, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_evals_of_new_entities");
 
-	status = (sycl::free(tData.pMem_gpu_evals_of_runs, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_gpu_evals_of_runs, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_gpu_evals_of_runs");
 
-	status = (sycl::free(tData.pMem_prng_states, dpct::get_default_queue()), 0);
+	status = (sycl::free(tData.pMem_prng_states, queue), 0);
 	RTERROR(status, "cudaFree: error freeing pMem_prng_states");
 
 	free(tData.device_name);
@@ -513,30 +517,31 @@ try
 		return 1;
 	}
 
+	sycl::queue queue;
+
 	// Upload kernel constant data - JL FIXME - Can these be moved once?
-	status = (dpct::get_default_queue().memcpy(cData.pKerconst_interintra, KerConst_interintra, sizeof(kernelconstant_interintra)).wait(), 0);
+	status = (queue.memcpy(cData.pKerconst_interintra, KerConst_interintra, sizeof(kernelconstant_interintra)).wait(), 0);
 	RTERROR(status, "cData.pKerconst_interintra: failed to upload to GPU memory.\n");
 
-	status = (dpct::get_default_queue().memcpy(cData.pKerconst_intracontrib, KerConst_intracontrib, sizeof(kernelconstant_intracontrib)).wait(), 0);
+	status = (queue.memcpy(cData.pKerconst_intracontrib, KerConst_intracontrib, sizeof(kernelconstant_intracontrib)).wait(), 0);
 	RTERROR(status, "cData.pKerconst_intracontrib: failed to upload to GPU memory.\n");
 
-	status = (dpct::get_default_queue().memcpy(cData.pKerconst_intra, KerConst_intra, sizeof(kernelconstant_intra)).wait(), 0);
+	status = (queue.memcpy(cData.pKerconst_intra, KerConst_intra, sizeof(kernelconstant_intra)).wait(), 0);
 	RTERROR(status, "cData.pKerconst_intra: failed to upload to GPU memory.\n");
 
-	status = (dpct::get_default_queue().memcpy(cData.pKerconst_rotlist, KerConst_rotlist, sizeof(kernelconstant_rotlist)).wait(), 0);
+	status = (queue.memcpy(cData.pKerconst_rotlist, KerConst_rotlist, sizeof(kernelconstant_rotlist)).wait(), 0);
 	RTERROR(status, "cData.pKerconst_rotlist: failed to upload to GPU memory.\n");
 
-	status = (dpct::get_default_queue().memcpy(cData.pKerconst_conform, KerConst_conform, sizeof(kernelconstant_conform)).wait(), 0);
+	status = (queue.memcpy(cData.pKerconst_conform, KerConst_conform, sizeof(kernelconstant_conform)).wait(), 0);
 	RTERROR(status, "cData.pKerconst_conform: failed to upload to GPU memory.\n");
 
-	dpct::get_default_queue().memcpy(cData.pMem_rotbonds_const, KerConst_grads->rotbonds, sizeof(KerConst_grads->rotbonds)).wait();
+	queue.memcpy(cData.pMem_rotbonds_const, KerConst_grads->rotbonds, sizeof(KerConst_grads->rotbonds)).wait();
 	RTERROR(status, "cData.pMem_rotbonds_const: failed to upload to GPU memory.\n");
 
-	dpct::get_default_queue().memcpy(cData.pMem_rotbonds_atoms_const, KerConst_grads->rotbonds_atoms, sizeof(KerConst_grads->rotbonds_atoms)).wait();
+	queue.memcpy(cData.pMem_rotbonds_atoms_const, KerConst_grads->rotbonds_atoms, sizeof(KerConst_grads->rotbonds_atoms)).wait();
 	RTERROR(status, "cData.pMem_rotbonds_atoms_const: failed to upload to " "GPU memory.\n");
 
-	dpct::get_default_queue().
-		memcpy(cData.pMem_num_rotating_atoms_per_rotbond_const,
+	queue.memcpy(cData.pMem_num_rotating_atoms_per_rotbond_const,
 				KerConst_grads->num_rotating_atoms_per_rotbond,
 				sizeof(KerConst_grads->num_rotating_atoms_per_rotbond)).wait();
 	RTERROR(status, "cData.pMem_num_rotating_atoms_per_rotbond_const " "failed to upload to GPU memory.\n");
@@ -545,7 +550,7 @@ try
 	// evaluation counters and random number generator states
 	if(cData.preallocated_gridsize==0)
 	{
-		status = (tData.pMem_fgrids = sycl::malloc_device<float>(mygrid->grids.size(), dpct::get_default_queue()), 0);
+		status = (tData.pMem_fgrids = sycl::malloc_device<float>(mygrid->grids.size(), queue), 0);
 		RTERROR(status, "pMem_fgrids: failed to allocate GPU memory.\n");
 	}
 
@@ -566,16 +571,16 @@ try
 	cData.warpbits = 5;
 
 	// Upload data
-	status = (dpct::get_default_queue().memcpy(tData.pMem_fgrids, mygrid->grids.data(), mygrid->grids.size() * sizeof(float)).wait(), 0);
+	status = (queue.memcpy(tData.pMem_fgrids, mygrid->grids.data(), mygrid->grids.size() * sizeof(float)).wait(), 0);
 	RTERROR(status, "pMem_fgrids: failed to upload to GPU memory.\n");
 
-	status = (dpct::get_default_queue().memcpy(pMem_conformations_current, cpu_init_populations, size_populations).wait(), 0);
+	status = (queue.memcpy(pMem_conformations_current, cpu_init_populations, size_populations).wait(), 0);
 	RTERROR(status, "pMem_conformations_current: failed to upload to GPU memory.\n");
 
-	status = ((dpct::get_default_queue().memcpy(tData.pMem_gpu_evals_of_runs, sim_state.cpu_evals_of_runs.data(), size_evals_of_runs).wait()), 0);
+	status = ((queue.memcpy(tData.pMem_gpu_evals_of_runs, sim_state.cpu_evals_of_runs.data(), size_evals_of_runs).wait()), 0);
 	RTERROR(status, "pMem_gpu_evals_of_runs: failed to upload to GPU memory.\n");
 
-	status = ((dpct::get_default_queue().memcpy(tData.pMem_prng_states, cpu_prng_seeds, size_prng_seeds).wait()), 0);
+	status = ((queue.memcpy(tData.pMem_prng_states, cpu_prng_seeds, size_prng_seeds).wait()), 0);
 	RTERROR(status, "pMem_prng_states: failed to upload to GPU memory.\n");
 
 	//preparing parameter struct
@@ -821,7 +826,7 @@ try
 	} // End if (dockpars.lsearch_rate != 0.0f)
 
 	// Verifying that the passed work-group size doesn't exceed device's limit
-	auto max_wg_size = dpct::get_default_queue().get_device().get_info<sycl::info::device::max_work_group_size>();
+	auto max_wg_size = queue.get_device().get_info<sycl::info::device::max_work_group_size>();
 	printf("\nWG size \n    Device limit: %lu \n    Actual: k1 = %u | k2 = %u | k3 = %u | k4 = %u | k7 = %u | k8 = %u\n",
 			max_wg_size, kernel1_lxsize, kernel2_lxsize, kernel3_lxsize, kernel4_lxsize, kernel7_lxsize, kernel8_lxsize);
 	assert(max_wg_size >= kernel1_lxsize);
@@ -832,7 +837,7 @@ try
 	assert(max_wg_size >= kernel8_lxsize);
 
 	// Verifying supported sub-group sizes
-	std::vector<size_t> sub_group_sizes = dpct::get_default_queue().get_device().get_info<sycl::info::device::sub_group_sizes>();
+	std::vector<size_t> sub_group_sizes = queue.get_device().get_info<sycl::info::device::sub_group_sizes>();
 	printf("\nSG size\n    Device support:");
 	for (auto sz : sub_group_sizes) {
 		printf(" %lu", sz);
@@ -846,11 +851,11 @@ try
 	#ifdef DOCK_DEBUG
 	para_printf("\nExecution starts:\n\n");
 	para_printf("%-25s", "\tK_INIT");fflush(stdout);
-	XeDeviceSynchronize();
+	queue.wait_and_throw();
 	#endif
-	gpu_calc_initpop(kernel1_gxsize, kernel1_lxsize, pMem_conformations_current, pMem_energies_current);
+	gpu_calc_initpop(queue, kernel1_gxsize, kernel1_lxsize, pMem_conformations_current, pMem_energies_current);
 	#ifdef DOCK_DEBUG
-	XeDeviceSynchronize();
+	queue.wait_and_throw();
 	para_printf("%15s" ," ... Finished\n");fflush(stdout);
 	#endif
 	// End of Kernel1
@@ -859,9 +864,9 @@ try
 	#ifdef DOCK_DEBUG
 	para_printf("%-25s", "\tK_EVAL");fflush(stdout);
 	#endif
-	gpu_sum_evals(kernel2_gxsize, kernel2_lxsize);
+	gpu_sum_evals(queue, kernel2_gxsize, kernel2_lxsize);
 	#ifdef DOCK_DEBUG
-	XeDeviceSynchronize();
+	queue.wait_and_throw();
 	para_printf("%15s" ," ... Finished\n");fflush(stdout);
 	#endif
 	// End of Kernel2
@@ -899,7 +904,7 @@ try
 		if (mypars->autostop) {
 			if (generation_cnt % mypars->as_frequency == 0)
 			{
-				status = (dpct::get_default_queue().memcpy(sim_state.cpu_energies.data(), pMem_energies_current, size_energies).wait(), 0);
+				status = (queue.memcpy(sim_state.cpu_energies.data(), pMem_energies_current, size_energies).wait(), 0);
 				RTERROR(status, "Memcpy: couldn't download pMem_energies_current");
 
 				if (autostop.check_if_satisfactory(generation_cnt, sim_state.cpu_energies.data(), total_evals))
@@ -933,7 +938,7 @@ try
 		#endif
 
 		//runKernel1D(command_queue,kernel4,kernel4_gxsize,kernel4_lxsize,&time_start_kernel,&time_end_kernel);
-		gpu_gen_and_eval_newpops(kernel4_gxsize, kernel4_lxsize, pMem_conformations_current, pMem_energies_current, pMem_conformations_next, pMem_energies_next);
+		gpu_gen_and_eval_newpops(queue, kernel4_gxsize, kernel4_lxsize, pMem_conformations_current, pMem_energies_current, pMem_conformations_next, pMem_energies_next);
 		#ifdef DOCK_DEBUG
 		para_printf("%15s", " ... Finished\n");fflush(stdout);
 		#endif
@@ -948,7 +953,7 @@ try
 				para_printf("%-25s", "\tK_LS_SOLISWETS");fflush(stdout);
 				#endif
 				//runKernel1D(command_queue,kernel3,kernel3_gxsize,kernel3_lxsize,&time_start_kernel,&time_end_kernel);
-				gpu_perform_LS(kernel3_gxsize, kernel3_lxsize, pMem_conformations_next, pMem_energies_next);                
+				gpu_perform_LS(queue, kernel3_gxsize, kernel3_lxsize, pMem_conformations_next, pMem_energies_next);
 				#ifdef DOCK_DEBUG
 				para_printf("%15s" ," ... Finished\n");fflush(stdout);
 				#endif
@@ -985,7 +990,7 @@ try
 				para_printf("%-25s", "\tK_LS_GRAD_ADADELTA");fflush(stdout);
 				#endif
 				// runKernel1D(command_queue,kernel7,kernel7_gxsize,kernel7_lxsize,&time_start_kernel,&time_end_kernel);
-				gpu_gradient_minAD(kernel7_gxsize, kernel7_lxsize, pMem_conformations_next, pMem_energies_next);
+				gpu_gradient_minAD(queue, kernel7_gxsize, kernel7_lxsize, pMem_conformations_next, pMem_energies_next);
 				#ifdef DOCK_DEBUG
 				para_printf("%15s" ," ... Finished\n");fflush(stdout);
 				#endif
@@ -996,7 +1001,7 @@ try
 				para_printf("%-25s", "\tK_LS_GRAD_ADAM");fflush(stdout);
 				#endif
 				// runKernel1D(command_queue,kernel8,kernel8_gxsize,kernel8_lxsize,&time_start_kernel,&time_end_kernel);
-				gpu_gradient_minAdam(kernel8_gxsize, kernel8_lxsize, pMem_conformations_next, pMem_energies_next);
+				gpu_gradient_minAdam(queue, kernel8_gxsize, kernel8_lxsize, pMem_conformations_next, pMem_energies_next);
 				#ifdef DOCK_DEBUG
 				para_printf("%15s" ," ... Finished\n");fflush(stdout);
 				#endif
@@ -1011,7 +1016,7 @@ try
 		para_printf("%-25s", "\tK_EVAL");fflush(stdout);
 		#endif
 		//runKernel1D(command_queue,kernel2,kernel2_gxsize,kernel2_lxsize,&time_start_kernel,&time_end_kernel);
-		gpu_sum_evals(kernel2_gxsize, kernel2_lxsize);
+		gpu_sum_evals(queue, kernel2_gxsize, kernel2_lxsize);
 		#ifdef DOCK_DEBUG
 		para_printf("%15s" ," ... Finished\n");fflush(stdout);
 		#endif
@@ -1080,10 +1085,10 @@ try
 	// http://www.cc.gatech.edu/~vetter/keeneland/tutorial-2012-02-20/08-opencl.pdf
 	// ===============================================================================
 	//processing results
-	status = (dpct::get_default_queue().memcpy(cpu_final_populations, pMem_conformations_current, size_populations).wait(), 0);
+	status = (queue.memcpy(cpu_final_populations, pMem_conformations_current, size_populations).wait(), 0);
 	RTERROR(status, "cudaMemcpy: couldn't copy pMem_conformations_current to host.\n");
 
-	status = (dpct::get_default_queue().memcpy(sim_state.cpu_energies.data(), pMem_energies_current, size_energies).wait(), 0);
+	status = (queue.memcpy(sim_state.cpu_energies.data(), pMem_energies_current, size_energies).wait(), 0);
 	RTERROR(status, "cudaMemcpy: couldn't copy pMem_energies_current to host.\n");
 
 	// Final autostop statistics output

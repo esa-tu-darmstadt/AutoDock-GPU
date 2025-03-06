@@ -47,28 +47,6 @@ static const float MAXFORCE         = FLT_MAX / 100.0f; // Used to cap absurd gr
 			exit(-1);	\
 	}
 
-#define SYNCHRONOUS
-
-#ifdef SYNCHRONOUS
-	#define LAUNCHERROR(s)	\
-	{	\
-		int status = 0;	\
-		XeDeviceSynchronize();	\
-		RTERROR(status, s);	\
-	}
-#else
-	#define LAUNCHERROR(s)	\
-	{	\
-		cudaError_t status = cudaGetLastError();	\
-		if (status != cudaSuccess)	\
-		{	\
-			printf("Error: %s launching kernel %s\n", cudaGetErrorString(status), s); \
-			cudaDeviceReset(); \
-			exit(-1); \
-		}	\
-	}
-#endif
-
 typedef struct dpct_type_74f5ca
 {
 	int             num_of_atoms;
