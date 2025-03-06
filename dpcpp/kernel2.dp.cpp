@@ -1,5 +1,3 @@
-#include <sycl/sycl.hpp>
-#include <dpct/dpct.hpp>
 /*
 
 AutoDock-GPU, an OpenCL implementation of AutoDock 4.2 running a Lamarckian
@@ -60,9 +58,12 @@ gpu_sum_evals_kernel(
 	}
 }
 
-void gpu_sum_evals(uint32_t blocks, uint32_t threadsPerBlock)
+void gpu_sum_evals(
+	sycl::queue &queue,
+	uint32_t blocks,
+	uint32_t threadsPerBlock)
 {
-	dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+	queue.submit([&](sycl::handler &cgh) {
 		extern dpct::constant_memory<GpuData, 0> cData;
 		cData.init();
 		auto cData_ptr_ct1 = cData.get_ptr();
@@ -78,7 +79,5 @@ void gpu_sum_evals(uint32_t blocks, uint32_t threadsPerBlock)
 					*cData_ptr_ct1
 				);
 		});
-	});
-
-	LAUNCHERROR("gpu_sum_evals_kernel");
+	}).wait_and_throw();
 }

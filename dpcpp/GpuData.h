@@ -25,8 +25,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef GPUDATADOTH
 #define GPUDATADOTH
-#include <sycl/sycl.hpp>
-#include <dpct/dpct.hpp>
 #include <float.h>
 
 static const int   TERMBITS         = 10;
@@ -48,28 +46,6 @@ static const float MAXFORCE         = FLT_MAX / 100.0f; // Used to cap absurd gr
 			dpct::get_current_device().reset();	\
 			exit(-1);	\
 	}
-
-#define SYNCHRONOUS
-
-#ifdef SYNCHRONOUS
-	#define LAUNCHERROR(s)	\
-	{	\
-		int status = 0;	\
-		XeDeviceSynchronize();	\
-		RTERROR(status, s);	\
-	}
-#else
-	#define LAUNCHERROR(s)	\
-	{	\
-		cudaError_t status = cudaGetLastError();	\
-		if (status != cudaSuccess)	\
-		{	\
-			printf("Error: %s launching kernel %s\n", cudaGetErrorString(status), s); \
-			cudaDeviceReset(); \
-			exit(-1); \
-		}	\
-	}
-#endif
 
 typedef struct dpct_type_74f5ca
 {

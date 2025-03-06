@@ -50,7 +50,8 @@ static GpuData cpuData;
 void SetKernelsGpuData(GpuData *pData) try
 {
 	int status;
-	status = (dpct::get_default_queue().memcpy(cData.get_ptr(), pData, sizeof(GpuData)).wait(), 0);
+	sycl::queue queue;
+	status = (queue.memcpy(cData.get_ptr(), pData, sizeof(GpuData)).wait(), 0);
 	RTERROR(status, "SetKernelsGpuData copy to cData failed");
 	memcpy(&cpuData, pData, sizeof(GpuData));
 }
@@ -64,7 +65,8 @@ catch (sycl::exception const &exc)
 void GetKernelsGpuData(GpuData *pData) try
 {
 	int status;
-	status = (dpct::get_default_queue().memcpy(pData, cData.get_ptr(), sizeof(GpuData)).wait(), 0);
+	sycl::queue queue;
+	status = (queue.memcpy(pData, cData.get_ptr(), sizeof(GpuData)).wait(), 0);
 	RTERROR(status, "GetKernelsGpuData copy From cData failed");
 }
 catch (sycl::exception const &exc)
