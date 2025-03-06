@@ -142,6 +142,10 @@ catch (sycl::exception const &exc)
 	std::exit(1);
 }
 
+#ifdef USE_XMX
+#include "xmx_capabilities.hpp"
+#endif
+
 void setup_gpu_for_docking(
 	GpuData &cData,
 	GpuTempData &tData)
@@ -197,6 +201,10 @@ try {
 	printf("Available memory on device:               %lu MB (total: %lu MB)\n",(freemem>>20),(totalmem>>20));
 	cData.devid=cData.devnum;
 	cData.devnum=-2;
+
+	#ifdef USE_XMX
+	query_xmx_capabilities(dpct::get_default_queue());
+	#endif
 
 #ifdef SET_CUDA_PRINTF_BUFFER
 	status = cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 200000000ull);

@@ -73,8 +73,34 @@ void gpu_calc_energrad(
 #endif
 	float *fgradient_genotype,
 	sycl::nd_item<3> item_ct1,
-	GpuData cData)
-{
+	GpuData cData
+#ifdef USE_XMX
+	/* Reduction using matrix units */
+	,
+	float *data_to_be_reduced,
+	float *data_to_be_reduced_arranged,
+	float *Q_data
+	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+	,
+	uint *in_indexes,
+	uint *out_indexes
+	#endif
+	#ifdef XMX_EC
+	,
+	float *in_A,
+	float *in_B,
+	float *in_A_tf32,
+	float *in_B_tf32,
+	float *in_dA_tf32,
+	float *in_dB_tf32
+		#ifdef XMX_EC_DEBUG
+		,
+		float *debug_B
+		#endif
+	#endif
+	/* Reduction using matrix units */
+#endif
+) {
 	int threadIdx_x = item_ct1.get_local_id(2);
 	int blockIdx_x = item_ct1.get_group(2);
 	int blockDim_x = item_ct1.get_local_range(2);
@@ -697,25 +723,155 @@ void gpu_calc_energrad(
 		torque_rot.z() += tr.z();
 	}
 
+#ifdef USE_XMX
+	/* Reduction using matrix units */
+
+	// Implementation based on M.Sc. thesis by Gabin Schieffer at KTH:
+	// "Accelerating a Molecular Docking Application by Leveraging Modern Heterogeneous Computing Systemx"
+	// https://www.diva-portal.org/smash/get/diva2:1786161/FULLTEXT01.pdf
+
+	// 1. Convert data-to-be-reduced from float to half
+	// and place it in a shared-memory array
+	#ifdef DEBUG_XMX_INPUTS
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = 1.0f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = 2.0f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = 3.0f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = 4.0f;
+	#else
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = torque_rot.x();
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = torque_rot.y();
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = torque_rot.z();
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = energy;
+	#endif
+
+	map_input_array(
+		item_ct1,
+		data_to_be_reduced,
+		data_to_be_reduced_arranged
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+
+	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\ndata_to_be_reduced (row_major)", data_to_be_reduced);
+	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\ndata_to_be_reduced_arranged (row_major)", data_to_be_reduced_arranged);
+
+	// 2. Perform reduction using matrix units
+	reduce_via_matrix_units(
+		item_ct1,
+		data_to_be_reduced_arranged,
+		Q_data
+		#ifdef XMX_EC
+		,
+		in_A,
+		in_B,
+		in_A_tf32,
+		in_B_tf32,
+		in_dA_tf32,
+		in_dB_tf32
+			#ifdef XMX_EC_DEBUG
+			,
+			debug_B
+			#endif
+		#endif
+	);
+
+	// 3. Retrieve result from shared memory
+	torque_rot.x() = data_to_be_reduced_arranged[0];
+	torque_rot.y() = data_to_be_reduced_arranged[1];
+	torque_rot.z() = data_to_be_reduced_arranged[2];
+	energy = data_to_be_reduced_arranged[3];
+
+	//print_reduced_values(item_ct1, "tx, ty, tz, e", data_to_be_reduced_arranged);
+
+	/* Reduction using matrix units */
+#else
 	// Do a reduction over the total gradient containing prepared "gradient_intra_*" values
 	torque_rot.x() = sycl::reduce_over_group(groupIdx, torque_rot.x(), std::plus<>());
 	torque_rot.y() = sycl::reduce_over_group(groupIdx, torque_rot.y(), std::plus<>());
 	torque_rot.z() = sycl::reduce_over_group(groupIdx, torque_rot.z(), std::plus<>());
 
+	// reduction over partial energies and prepared "gradient_intra_*" values
+	energy = sycl::reduce_over_group(groupIdx, energy, std::plus<>());
+#endif
+
 	// TODO
 	// -------------------------------------------------------
 	// Obtaining energy and translation-related gradients
 	// -------------------------------------------------------
-	// reduction over partial energies and prepared "gradient_intra_*" values
-	energy = sycl::reduce_over_group(groupIdx, energy, std::plus<>());
-
 #if defined (DEBUG_ENERGY_KERNEL)
 	intraE = sycl::reduce_over_group(groupIdx, intraE, std::plus<>());
 #endif
 
+#ifdef USE_XMX
+	/* Reduction using matrix units */
+
+	// Implementation based on M.Sc. thesis by Gabin Schieffer at KTH:
+	// "Accelerating a Molecular Docking Application by Leveraging Modern Heterogeneous Computing Systemx"
+	// https://www.diva-portal.org/smash/get/diva2:1786161/FULLTEXT01.pdf
+
+	// 1. Convert data-to-be-reduced from float to half
+	// and place it in a shared memory array
+	#ifdef DEBUG_XMX_INPUTS
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = 22.04f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = 26.05f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = 19.02f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = 30.11f;
+	#else
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = gx;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = gy;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = gz;
+	#endif
+
+	map_input_array(
+		item_ct1,
+		data_to_be_reduced,
+		data_to_be_reduced_arranged
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+
+	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\ndata_to_be_reduced (row_major)", data_to_be_reduced);
+	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\ndata_to_be_reduced_arranged (row_major)", data_to_be_reduced_arranged);
+
+	// 2. Perform reduction using matrix units
+	reduce_via_matrix_units(
+		item_ct1,
+		data_to_be_reduced_arranged,
+		Q_data
+		#ifdef XMX_EC
+		,
+		in_A,
+		in_B,
+		in_A_tf32,
+		in_B_tf32,
+		in_dA_tf32,
+		in_dB_tf32
+			#ifdef XMX_EC_DEBUG
+			,
+			debug_B
+			#endif
+		#endif
+	);
+
+	// 3. Retrieve results from shared memory
+	gx = data_to_be_reduced_arranged[0];
+	gy = data_to_be_reduced_arranged[1];
+	gz = data_to_be_reduced_arranged[2];
+
+	//print_reduced_values(item_ct1, "gx, gy, gz", data_to_be_reduced_arranged);
+
+	/* Reduction using matrix units */
+#else
 	gx = sycl::reduce_over_group(groupIdx, gx, std::plus<>());
 	gy = sycl::reduce_over_group(groupIdx, gy, std::plus<>());
 	gz = sycl::reduce_over_group(groupIdx, gz, std::plus<>());
+#endif
 
 	global_energy = energy;
 	int* gradient_genotype = (int*)fgradient_genotype;
