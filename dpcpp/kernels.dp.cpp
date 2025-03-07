@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "GpuData.h"
 #include "dpcpp_migration.h"
 
-using syclexp = sycl::ext::oneapi::experimental;
+namespace syclexp = sycl::ext::oneapi::experimental;
 
 #define syclprintf syclexp::printf
 
