@@ -32,7 +32,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "GpuData.h"
 #include "dpcpp_migration.h"
 
-#define syclprintf sycl::ext::oneapi::experimental::printf
+using syclexp = sycl::ext::oneapi::experimental;
+
+#define syclprintf syclexp::printf
 
 #define ATOMICADDI32(pAccumulator, value) \
 	sycl::atomic_ref<int, SYCL_ATOMICS_MEMORY_ORDER, SYCL_ATOMICS_MEM_SCOPE, sycl::access::address_space::local_space>(*pAccumulator) += ((int)(value))
@@ -71,7 +73,7 @@ constexpr int tK = 8;
 // Tripcount for matrix C as a workaround when wi_data_C.length() is buggy
 constexpr int tripcountC = (tM * tN)/sg_sz;
 
-using tf32 = sycl::ext::oneapi::experimental::matrix::precision::tf32;
+using tf32 = syclexp::matrix::precision::tf32;
 using TA = tf32;
 using TB = tf32;
 using TC = float;
@@ -79,7 +81,7 @@ using TC = float;
 // Number of elements of input matrix (to be reduced)
 constexpr int TILE_NELEMS = tM * tK;
 
-using namespace sycl::ext::oneapi::experimental::matrix;
+using namespace syclexp::matrix;
 
 // Printing submatrices contents,
 // which have to be previously copied into an array in local memory.
