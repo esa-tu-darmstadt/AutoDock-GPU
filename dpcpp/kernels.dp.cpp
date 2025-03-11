@@ -65,6 +65,9 @@ namespace syclexp = sycl::ext::oneapi::experimental;
 #define XMX_EC
 //#define XMX_EC_DEBUG
 
+// TODO: to be deleted when Intel fixes bug
+#define INTEL_JM_WORKAROUND
+
 // Number of rows/cols of a submatrix: tM, tN, tK
 constexpr int tM = 8;
 constexpr int tN = 16;
@@ -335,11 +338,15 @@ void custom_matrix_mad_ec (
 	//joint_matrix_load(sg, sub_B, sycl::local_ptr<float>(B_tf32), tK); // Col-major -> stride is tK
 	T_JM_C sub_C_tmp;
 	joint_matrix_load(sg, sub_C_tmp, sycl::local_ptr<float>(B_tf32), tK, layout::col_major); // Col-major -> stride is tK
+	#ifdef INTEL_JM_WORKAROUND
 	// Replacemented suggested by Intel
-	//joint_matrix_copy(sg, sub_C_tmp, sub_B);
 	auto wi_data_C = sycl::ext::oneapi::detail::get_wi_data(sg, sub_C_tmp);
 	auto wi_data_B = sycl::ext::oneapi::detail::get_wi_data(sg, sub_B);
-	for (int i = 0; i < /*wi_data_C.length()*/ /*4*/ tripcountC; i++) { wi_data_B[i] = (float)(wi_data_C[i]); }
+	for (int i = 0; i < /*wi_data_C.length()*/ tripcountC; i++) { wi_data_B[i] = (float)(wi_data_C[i]); }
+	#else
+	// Once Intel fixes bu, this should be used instead (i.e., no workarounds)
+	joint_matrix_copy(sg, sub_C_tmp, sub_B);
+	#endif
 
 	// Computing [20] (Ootomo et al.)
 	for (uint i = wi_Id_sg; i < tM * tK; i+=sg_Size) { dA_tf32[i] = round_to_tf32( (A_fp32[i] - (float)(A_tf32[i])) * FACTOR_RED_UF ); }
@@ -365,11 +372,15 @@ void custom_matrix_mad_ec (
 	//joint_matrix_load(sg, sub_dB, sycl::local_ptr<float>(dB_tf32), tK); // Col-major -> stride is tK
 	T_JM_C sub_dC_tmp;
 	joint_matrix_load(sg, sub_dC_tmp, sycl::local_ptr<float>(dB_tf32), tK, layout::col_major); // Col-major -> stride is tK
+	#ifdef INTEL_JM_WORKAROUND
 	// Replacemented suggested by Intel
-	//joint_matrix_copy(sg, sub_dC_tmp, sub_dB);
 	auto wi_data_dC = sycl::ext::oneapi::detail::get_wi_data(sg, sub_dC_tmp);
 	auto wi_data_dB = sycl::ext::oneapi::detail::get_wi_data(sg, sub_dB);
-	for (int i = 0; i < /*wi_data_C.length()*/ /*4*/ tripcountC; i++) { wi_data_dB[i] = (float)(wi_data_dC[i]); }
+	for (int i = 0; i < /*wi_data_C.length()*/ tripcountC; i++) { wi_data_dB[i] = (float)(wi_data_dC[i]); }
+	#else
+	// Once Intel fixes bu, this should be used instead (i.e., no workarounds)
+	joint_matrix_copy(sg, sub_dC_tmp, sub_dB);
+	#endif
 
 	// Computing part of [24] (Ootomo et al.)
 	joint_matrix_mad(sg, sub_dC, sub_dA, sub_B, sub_dC);
