@@ -457,12 +457,12 @@ void gpu_gradient_minAD(
 					pMem_energies_next,
 					item_ct1,
 					*cData_ptr_ct1,
-					dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					entity_id_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					best_energy_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					rho_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					cons_succ_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					cons_fail_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
+					dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					entity_id_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					best_energy_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					rho_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					cons_succ_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					cons_fail_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
 				);
 		});
 	}).wait_and_throw();

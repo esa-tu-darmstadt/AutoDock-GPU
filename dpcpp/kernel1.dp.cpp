@@ -85,7 +85,7 @@ void gpu_calc_initpop(
 					pEnergies_current,
 					item_ct1,
 					*cData_ptr_ct1,
-					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
+					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
 				);
 			});
 	}).wait_and_throw();
