@@ -529,31 +529,31 @@ void gpu_gradient_minAdam(
 					pMem_energies_next,
 					item_ct1,
 					*cData_ptr_ct1,
-					dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					entity_id_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					best_energy_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
+					dpct_local_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					entity_id_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					best_energy_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
 					#ifdef USE_XMX
 					/* Reduction using matrix units */
 					,
-					data_to_be_reduced.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					data_to_be_reduced_arranged.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					Q_data.template get_multi_ptr<sycl::access::decorated::no>().get()
+					data_to_be_reduced.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					data_to_be_reduced_arranged.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					Q_data.template get_multi_ptr<sycl::access::decorated::yes>().get()
 					#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
 					,
-					in_indexes.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					out_indexes.template get_multi_ptr<sycl::access::decorated::no>().get()
+					in_indexes.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					out_indexes.template get_multi_ptr<sycl::access::decorated::yes>().get()
 					#endif
 					#ifdef XMX_EC
 					,
-					in_A.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					in_B.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					in_A_tf32.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					in_B_tf32.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					in_dA_tf32.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					in_dB_tf32.template get_multi_ptr<sycl::access::decorated::no>().get()
+					in_A.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_B.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_A_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_B_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_dA_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_dB_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get()
 						#ifdef XMX_EC_DEBUG
 						,
-						debug_B.template get_multi_ptr<sycl::access::decorated::no>().get()
+						debug_B.template get_multi_ptr<sycl::access::decorated::yes>().get()
 						#endif
 					#endif
 					/* Reduction using matrix units */
