@@ -356,15 +356,15 @@ void gpu_gen_and_eval_newpops(
 					pMem_energies_next,
 					item_ct1,
 					*cData_ptr_ct1,
-					offspring_genotype_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					parent_candidates_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					candidate_energies_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					parents_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					covr_point_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					randnums_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					sBestEnergy_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					sBestID_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get(),
-					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::no>().get()
+					offspring_genotype_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					parent_candidates_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					candidate_energies_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					parents_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					covr_point_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					randnums_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					sBestEnergy_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					sBestID_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
 				);
 		});
 	}).wait_and_throw();
