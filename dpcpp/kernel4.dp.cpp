@@ -55,6 +55,7 @@ gpu_gen_and_eval_newpops_kernel(
 	float *randnums,
 	float *sBestEnergies,
 	int *sBestIDs,
+	int *sBestID,
 	sycl::float3 *calc_coords
 	)
 // The GPU global function
@@ -66,7 +67,6 @@ gpu_gen_and_eval_newpops_kernel(
 	int run_id;
 	int temp_covr_point;
 	float energy;
-	int bestID;
 #ifdef DOCK_TRACE
 	size_t global_id = item_ct1.get_global_id(2);
 #endif 
@@ -98,7 +98,7 @@ gpu_gen_and_eval_newpops_kernel(
 		// which may be slightly faster
 		if (threadIdx_x == 0)
 		{
-			bestID = sBestIDs[0];
+			sbestID[0] = sBestIDs[0];
 			energy = sBestEnergies[0];
 
 			for (int entity_counter = 1;
@@ -107,7 +107,7 @@ gpu_gen_and_eval_newpops_kernel(
 			{
 				if ( (sBestEnergies[entity_counter] < energy) && (entity_counter < cData.dockpars.pop_size) )
 				{
-					bestID = sBestIDs[entity_counter];
+					sbestID[0] = sBestIDs[entity_counter];
 					energy = sBestEnergies[entity_counter];
 				}
 			}
@@ -123,7 +123,7 @@ gpu_gen_and_eval_newpops_kernel(
 
 		// Copy best genome to next generation
 		int dOffset = blockIdx_x * GENOTYPE_LENGTH_IN_GLOBMEM;
-		int sOffset = dOffset + bestID * GENOTYPE_LENGTH_IN_GLOBMEM;
+		int sOffset = dOffset + sbestID[0] * GENOTYPE_LENGTH_IN_GLOBMEM;
 		for (int gene_counter = threadIdx_x;
 				 gene_counter < cData.dockpars.num_of_genes;
 				 gene_counter += blockDim_x)
@@ -341,6 +341,7 @@ void gpu_gen_and_eval_newpops(
 		sycl::local_accessor<float, 1> randnums_acc_ct1(sycl::range<1>(10), cgh);
 		sycl::local_accessor<float, 1> sBestEnergies_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
 		sycl::local_accessor<int, 1> sBestIDs_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
+		sycl::local_accessor<int, 1> sBestID_acc_ct1(sycl::range<1>(1), cgh);
 		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(MAX_NUM_OF_ATOMS), cgh);
 
 		cgh.parallel_for<class _kernel_ga>(
@@ -364,6 +365,7 @@ void gpu_gen_and_eval_newpops(
 					randnums_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					sBestEnergies_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					sBestIDs_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					sBestID_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
 				);
 		});
