@@ -102,7 +102,6 @@ void gpu_calc_energrad(
 #endif
 ) {
 	int threadIdx_x = item_ct1.get_local_id(2);
-	int blockIdx_x = item_ct1.get_group(2);
 	int blockDim_x = item_ct1.get_local_range(2);
 	auto groupIdx = item_ct1.get_group();
 
