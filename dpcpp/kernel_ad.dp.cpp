@@ -71,7 +71,34 @@ gpu_gradient_minAD_kernel(
 	float *best_energy,
 	float *rho,
 	int *cons_succ,
-	int *cons_fail)
+	int *cons_fail
+	#ifdef USE_XMX
+	/* Reduction using matrix units */
+	,
+	float *data_to_be_reduced,
+	float *data_to_be_reduced_arranged,
+	float *Q_data
+	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+	,
+	uint *in_indexes,
+	uint *out_indexes
+	#endif
+	#ifdef XMX_EC
+	,
+	float *in_A,
+	float *in_B,
+	float *in_A_tf32,
+	float *in_B_tf32,
+	float *in_dA_tf32,
+	float *in_dB_tf32
+		#ifdef XMX_EC_DEBUG
+		,
+		float *debug_B
+		#endif
+	#endif
+	/* Reduction using matrix units */
+	#endif
+)
 // The GPU global function performs gradient-based minimization on (some) entities of conformations_next.
 // The number of OpenCL compute units (CU) which should be started equals to num_of_minEntities*num_of_runs.
 // This way the first num_of_lsentities entity of each population will be subjected to local search
@@ -255,6 +282,32 @@ gpu_gradient_minAD_kernel(
 			gradient,
 			item_ct1,
 			cData
+			#ifdef USE_XMX
+			/* Reduction using matrix units */
+			,
+			data_to_be_reduced,
+			data_to_be_reduced_arranged,
+			Q_data
+			#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+			,
+			in_indexes,
+			out_indexes
+			#endif
+			#ifdef XMX_EC
+			,
+			in_A,
+			in_B,
+			in_A_tf32,
+			in_B_tf32,
+			in_dA_tf32,
+			in_dB_tf32
+				#ifdef XMX_EC_DEBUG
+				,
+				debug_B
+				#endif
+			#endif
+			/* Reduction using matrix units */
+			#endif
 		);
 		// =============================================================
 		// =============================================================
@@ -445,6 +498,31 @@ void gpu_gradient_minAD(
 		sycl::local_accessor<int, 0> cons_succ_acc_ct1(cgh);
 		sycl::local_accessor<int, 0> cons_fail_acc_ct1(cgh);
 
+		#ifdef USE_XMX
+		/* Reduction using matrix units */
+		sycl::local_accessor<float, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
+		sycl::local_accessor<float, 1> data_to_be_reduced_arranged(sycl::range<1>(4 * threads), cgh);
+		sycl::local_accessor<float, 1> Q_data(sycl::range<1>(tM * tK), cgh);
+
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		sycl::local_accessor<uint, 1> in_indexes(sycl::range<1>(4 * threads), cgh);
+		sycl::local_accessor<uint, 1> out_indexes(sycl::range<1>(4 * threads), cgh);
+		#endif
+
+		#ifdef XMX_EC
+		sycl::local_accessor<float, 1> in_A (sycl::range<1>(tM * tK), cgh);
+		sycl::local_accessor<float, 1> in_B (sycl::range<1>(tK * tN), cgh);
+		sycl::local_accessor<float, 1> in_A_tf32 (sycl::range<1>(tM * tK), cgh);
+		sycl::local_accessor<float, 1> in_B_tf32 (sycl::range<1>(tK * tN), cgh);
+		sycl::local_accessor<float, 1> in_dA_tf32 (sycl::range<1>(tM * tK), cgh);
+		sycl::local_accessor<float, 1> in_dB_tf32 (sycl::range<1>(tK * tN), cgh);
+			#ifdef XMX_EC_DEBUG
+			sycl::local_accessor<float, 1> debug_B (sycl::range<1>(tK * tN), cgh);
+			#endif
+		#endif
+		/* Reduction using matrix units */
+		#endif
+
 		cgh.parallel_for<class _kernel_ad>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads),
@@ -463,6 +541,32 @@ void gpu_gradient_minAD(
 					rho_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					cons_succ_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					cons_fail_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
+					#ifdef USE_XMX
+					/* Reduction using matrix units */
+					,
+					data_to_be_reduced.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					data_to_be_reduced_arranged.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					Q_data.template get_multi_ptr<sycl::access::decorated::yes>().get()
+					#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+					,
+					in_indexes.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					out_indexes.template get_multi_ptr<sycl::access::decorated::yes>().get()
+					#endif
+					#ifdef XMX_EC
+					,
+					in_A.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_B.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_A_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_B_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_dA_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					in_dB_tf32.template get_multi_ptr<sycl::access::decorated::yes>().get()
+						#ifdef XMX_EC_DEBUG
+						,
+						debug_B.template get_multi_ptr<sycl::access::decorated::yes>().get()
+						#endif
+					#endif
+					/* Reduction using matrix units */
+					#endif
 				);
 		});
 	}).wait_and_throw();
