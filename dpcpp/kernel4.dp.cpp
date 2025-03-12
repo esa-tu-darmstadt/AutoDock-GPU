@@ -54,7 +54,7 @@ gpu_gen_and_eval_newpops_kernel(
 	int *covr_point,
 	float *randnums,
 	float *sBestEnergies,
-	int *sBestID,
+	int *sBestIDs,
 	sycl::float3 *calc_coords
 	)
 // The GPU global function
@@ -76,7 +76,7 @@ gpu_gen_and_eval_newpops_kernel(
 		// Find and copy best member of population to position 0
 		if (threadIdx_x < cData.dockpars.pop_size)
 		{
-			sBestID[threadIdx_x] = threadIdx_x;
+			sBestIDs[threadIdx_x] = threadIdx_x;
 			sBestEnergies[threadIdx_x] = pMem_energies_current[blockIdx_x + threadIdx_x];
 		}
 
@@ -87,7 +87,7 @@ gpu_gen_and_eval_newpops_kernel(
 			float e = pMem_energies_current[blockIdx_x + entity_counter];
 			if (e < sBestEnergies[threadIdx_x])
 			{
-				sBestID[threadIdx_x] = entity_counter;
+				sBestIDs[threadIdx_x] = entity_counter;
 				sBestEnergies[threadIdx_x] = e;
 			}
 		}
@@ -98,7 +98,7 @@ gpu_gen_and_eval_newpops_kernel(
 		// which may be slightly faster
 		if (threadIdx_x == 0)
 		{
-			bestID = sBestID[0];
+			bestID = sBestIDs[0];
 			energy = sBestEnergies[0];
 
 			for (int entity_counter = 1;
@@ -107,7 +107,7 @@ gpu_gen_and_eval_newpops_kernel(
 			{
 				if ( (sBestEnergies[entity_counter] < energy) && (entity_counter < cData.dockpars.pop_size) )
 				{
-					bestID = sBestID[entity_counter];
+					bestID = sBestIDs[entity_counter];
 					energy = sBestEnergies[entity_counter];
 				}
 			}
@@ -340,7 +340,7 @@ void gpu_gen_and_eval_newpops(
 		sycl::local_accessor<int, 1> covr_point_acc_ct1(sycl::range<1>(2), cgh);
 		sycl::local_accessor<float, 1> randnums_acc_ct1(sycl::range<1>(10), cgh);
 		sycl::local_accessor<float, 1> sBestEnergies_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
-		sycl::local_accessor<int, 1> sBestID_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
+		sycl::local_accessor<int, 1> sBestIDs_acc_ct1(sycl::range<1>(threadsPerBlock), cgh);
 		sycl::local_accessor<sycl::float3, 1> calc_coords_acc_ct1(sycl::range<1>(MAX_NUM_OF_ATOMS), cgh);
 
 		cgh.parallel_for<class _kernel_ga>(
@@ -363,7 +363,7 @@ void gpu_gen_and_eval_newpops(
 					covr_point_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					randnums_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					sBestEnergies_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
-					sBestID_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					sBestIDs_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					calc_coords_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
 				);
 		});
