@@ -123,7 +123,7 @@ CONFIG=RELEASE
 #CONFIG=FDEBUG
 
 ifeq ($(CONFIG),FDEBUG)
-	OPT =-g -Wall -DDOCK_DEBUG
+	OPT =-g -O0 -Wall -DDOCK_DEBUG
 	ifeq ($(DEVICE), GPU)
 	# for AOT compile and debug
 	#	OPT+=-fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs "-device ats -internal_options -cl-kernel-debug-enable -options -cl-opt-disable"
@@ -131,11 +131,11 @@ ifeq ($(CONFIG),FDEBUG)
 	#	OPT+=-fsycl-targets=spir64_gen-unknown-unknown-sycldevice -Xs "-device ats"
 	endif    
 else ifeq ($(CONFIG),FDEBUG_VTUNE)
-	OPT =-g -Wall -DDOCK_DEBUG -gline-tables-only -fdebug-info-for-profiling
+	OPT =-g -O0 -Wall -DDOCK_DEBUG -gline-tables-only -fdebug-info-for-profiling
 else ifeq ($(CONFIG),LDEBUG_VTUNE)
-	OPT =-g -Wall -gline-tables-only -fdebug-info-for-profiling	
+	OPT =-g -O0 -Wall -gline-tables-only -fdebug-info-for-profiling
 else ifeq ($(CONFIG),LDEBUG)
-	OPT =-g -Wall 
+	OPT =-g -O0 -Wall
 else ifeq ($(CONFIG),RELEASE)
 	OPT =-O3
 	ifeq ($(PLATFORM),PVC)
