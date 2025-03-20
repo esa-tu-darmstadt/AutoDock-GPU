@@ -141,6 +141,7 @@ enum {C=0,N=1,O=2,H=3,XX=4,P=5,S=6};  // see "bond_index" in the "AD4.1_bound.da
 	#define SYCL_DIVIDE(x,y) sycl::native::divide(x,y)
 	#define SYCL_RECIP(x) sycl::native::recip(x)
 	#define SYCL_POWN(x,y) sycl::native::powr(x, (float)(y)) // Conditions: x>=0. Additional: y (originally integer) is transformed into float
+	#define SYCL_LENGTH(x) sycl::fast_length(x)
 #else
 	#define SYCL_SQRT(x) sycl::sqrt(x)
 	#define SYCL_RSQRT(x) (1.0f/SYCL_SQRT(x))
@@ -148,7 +149,8 @@ enum {C=0,N=1,O=2,H=3,XX=4,P=5,S=6};  // see "bond_index" in the "AD4.1_bound.da
 	#define SYCL_COS(x) sycl::cos(x)
 	#define SYCL_DIVIDE(x,y) (x/y)
 	#define SYCL_RECIP(x) (1.0f/x)
-	#define SYCL_POWN(x,y) sycl::pow<float>(x,y)
+	#define SYCL_POWN(x,y) sycl::pow(x,y)
+	#define SYCL_LENGTH(x) sycl::length(x)
 #endif
 
 // Enables switching between local and global memory for barriers in device code
@@ -176,6 +178,10 @@ enum {C=0,N=1,O=2,H=3,XX=4,P=5,S=6};  // see "bond_index" in the "AD4.1_bound.da
 	#define SYCL_ATOMICS_MEMORY_ORDER sycl::memory_order::release
 #else
 	#define SYCL_ATOMICS_MEMORY_ORDER sycl::memory_order::acq_rel
-#endif 
+#endif
+
+// Defines sub-group size.
+// Defined here so that it can be used in source under both host/ and dpcpp/
+constexpr unsigned int sg_sz = 32;
 
 #endif /* DEFINES_H_ */

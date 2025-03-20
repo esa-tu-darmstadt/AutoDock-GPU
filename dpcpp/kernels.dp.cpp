@@ -32,28 +32,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "GpuData.h"
 #include "dpcpp_migration.h"
 
-inline uint64_t llitoulli(int64_t l)
-{
-	uint64_t u;
-	/*
-	DPCT1053:0: Migration of device assembly code is not supported.
-	*/
-	// asm("mov.b64    %0, %1;" : "=l"(u) : "l"(l));
-	u = l;
-	return u;
-}
-
-inline int64_t ullitolli(uint64_t u)
-{
-	int64_t l;
-	/*
-	DPCT1053:1: Migration of device assembly code is not supported.
-	*/
-	// asm("mov.b64    %0, %1;" : "=l"(l) : "l"(u));
-	l = u;
-	return l;
-}
-
 #define ATOMICADDI32(pAccumulator, value) \
 	sycl::atomic_ref<int, SYCL_ATOMICS_MEMORY_ORDER, SYCL_ATOMICS_MEM_SCOPE, sycl::access::address_space::local_space>(*pAccumulator) += ((int)(value))
 
@@ -305,7 +283,8 @@ static GpuData cpuData;
 void SetKernelsGpuData(GpuData *pData) try
 {
 	int status;
-	status = (dpct::get_default_queue().memcpy(cData.get_ptr(), pData, sizeof(GpuData)).wait(), 0);
+	sycl::queue queue;
+	status = (queue.memcpy(cData.get_ptr(), pData, sizeof(GpuData)).wait(), 0);
 	RTERROR(status, "SetKernelsGpuData copy to cData failed");
 	memcpy(&cpuData, pData, sizeof(GpuData));
 }
@@ -319,7 +298,8 @@ catch (sycl::exception const &exc)
 void GetKernelsGpuData(GpuData *pData) try
 {
 	int status;
-	status = (dpct::get_default_queue().memcpy(pData, cData.get_ptr(), sizeof(GpuData)).wait(), 0);
+	sycl::queue queue;
+	status = (queue.memcpy(pData, cData.get_ptr(), sizeof(GpuData)).wait(), 0);
 	RTERROR(status, "GetKernelsGpuData copy From cData failed");
 }
 catch (sycl::exception const &exc)

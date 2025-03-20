@@ -1,5 +1,3 @@
-#include <sycl/sycl.hpp>
-#include <dpct/dpct.hpp>
 /*
 
 AutoDock-GPU, an OpenCL implementation of AutoDock 4.2 running a Lamarckian
@@ -85,6 +83,10 @@ void gpu_calc_energrad(
 	/* Reduction using matrix units */
 #endif
 ) {
+	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockDim_x = item_ct1.get_local_range(2);
+	auto groupIdx = item_ct1.get_group();
+
 	float energy = 0.0f;
 #ifdef DOCK_TRACE
 	size_t global_id = item_ct1.get_global_id(2);
@@ -97,10 +99,10 @@ void gpu_calc_energrad(
 
 	// Initializing gradients (forces)
 	// Derived from autodockdev/maps.py
-	for (uint32_t atom_id = item_ct1.get_local_id(2);
+	for (uint32_t atom_id = threadIdx_x;
 				  atom_id < cData.dockpars.num_of_atoms;	// makes sure that gradient sum reductions give
 															// correct results if dockpars_num_atoms < NUM_OF_THREADS_PER_BLOCK
-				  atom_id += item_ct1.get_local_range().get(2))
+				  atom_id += blockDim_x)
 	{
 		// Initialize coordinates
 		calc_coords[atom_id].x() = cData.pKerconst_conform->ref_coords_const[3 * atom_id];
@@ -114,9 +116,9 @@ void gpu_calc_energrad(
 	}
 
 	// Initializing gradient genotypes
-	for (uint32_t gene_cnt = item_ct1.get_local_id(2);
+	for (uint32_t gene_cnt = threadIdx_x;
 				  gene_cnt < cData.dockpars.num_of_genes;
-				  gene_cnt += item_ct1.get_local_range().get(2))
+				  gene_cnt += blockDim_x)
 	{
 		fgradient_genotype[gene_cnt] = 0;
 	}
@@ -151,9 +153,9 @@ void gpu_calc_energrad(
 	// ================================================
 	// CALCULATING ATOMIC POSITIONS AFTER ROTATIONS
 	// ================================================
-	for (uint32_t rotation_counter = item_ct1.get_local_id(2);
+	for (uint32_t rotation_counter = threadIdx_x;
 				  rotation_counter < cData.dockpars.rotbondlist_length;
-				  rotation_counter += item_ct1.get_local_range().get(2))
+				  rotation_counter += blockDim_x)
 	{
 		int rotation_list_element = cData.pKerconst_rotlist->rotlist_const[rotation_counter];
 
@@ -227,9 +229,9 @@ void gpu_calc_energrad(
 	float cube[8];
 	float inv_grid_spacing = SYCL_RECIP(cData.dockpars.grid_spacing);
 
-	for (uint32_t atom_id = item_ct1.get_local_id(2);
+	for (uint32_t atom_id = threadIdx_x;
 				  atom_id < cData.dockpars.num_of_atoms;
-				  atom_id += item_ct1.get_local_range().get(2))
+				  atom_id += blockDim_x)
 	{
 		if (cData.pKerconst_interintra->ignore_inter_const[atom_id]>0) // first two atoms of a flex res are to be ignored here
 			continue;
@@ -471,11 +473,11 @@ void gpu_calc_energrad(
 	// ================================================
 #ifdef REPRO
 	// Simplest way to ensure random order of atomic addition doesn't make answers irreproducible: use only 1 thread
-	if (item_ct1.get_local_id(2)==0) for (uint32_t contributor_counter = 0; contributor_counter < cData.dockpars.num_of_intraE_contributors; contributor_counter+= 1) {		
+	if (threadIdx_x==0) for (uint32_t contributor_counter = 0; contributor_counter < cData.dockpars.num_of_intraE_contributors; contributor_counter+= 1) {
 #else
-	for (uint32_t contributor_counter = item_ct1.get_local_id(2);
+	for (uint32_t contributor_counter = threadIdx_x;
 				  contributor_counter < cData.dockpars.num_of_intraE_contributors;
-				  contributor_counter += item_ct1.get_local_range().get(2))
+				  contributor_counter += blockDim_x)
 	{
 #endif
 		// Storing in a private variable 
@@ -673,9 +675,9 @@ void gpu_calc_energrad(
 	float gz = 0.0f;
 
 	// overall rotation is only for the moving ligand
-	for (uint32_t atom_cnt = item_ct1.get_local_id(2);
+	for (uint32_t atom_cnt = threadIdx_x;
 				  atom_cnt < cData.dockpars.true_ligand_atoms;
-				  atom_cnt += item_ct1.get_local_range().get(2))
+				  atom_cnt += blockDim_x)
 	{
 		sycl::float3 r;
 		r.x() = (calc_coords[atom_cnt].x() - genrot_movingvec.x()) * cData.dockpars.grid_spacing;
@@ -739,12 +741,12 @@ void gpu_calc_energrad(
 	/* Reduction using matrix units */
 #else
 	// Do a reduction over the total gradient containing prepared "gradient_intra_*" values
-	torque_rot.x() = sycl::reduce_over_group(item_ct1.get_group(), torque_rot.x(), std::plus<>());
-	torque_rot.y() = sycl::reduce_over_group(item_ct1.get_group(), torque_rot.y(), std::plus<>());
-	torque_rot.z() = sycl::reduce_over_group(item_ct1.get_group(), torque_rot.z(), std::plus<>());
+	torque_rot.x() = sycl::reduce_over_group(groupIdx, torque_rot.x(), std::plus<>());
+	torque_rot.y() = sycl::reduce_over_group(groupIdx, torque_rot.y(), std::plus<>());
+	torque_rot.z() = sycl::reduce_over_group(groupIdx, torque_rot.z(), std::plus<>());
 
 	// reduction over partial energies and prepared "gradient_intra_*" values
-	energy = sycl::reduce_over_group(item_ct1.get_group(), energy, std::plus<>());
+	energy = sycl::reduce_over_group(groupIdx, energy, std::plus<>());
 #endif
 
 	// TODO
@@ -753,7 +755,7 @@ void gpu_calc_energrad(
 	// -------------------------------------------------------
 
 #if defined (DEBUG_ENERGY_KERNEL)
-	intraE = sycl::reduce_over_group(item_ct1.get_group(), intraE, std::plus<>());
+	intraE = sycl::reduce_over_group(groupIdx, intraE, std::plus<>());
 #endif
 
 #ifdef USE_XMX
@@ -790,15 +792,15 @@ void gpu_calc_energrad(
 
 	/* Reduction using matrix units */
 #else
-	gx = sycl::reduce_over_group(item_ct1.get_group(), gx, std::plus<>());
-	gy = sycl::reduce_over_group(item_ct1.get_group(), gy, std::plus<>());
-	gz = sycl::reduce_over_group(item_ct1.get_group(), gz, std::plus<>());
+	gx = sycl::reduce_over_group(groupIdx, gx, std::plus<>());
+	gy = sycl::reduce_over_group(groupIdx, gy, std::plus<>());
+	gz = sycl::reduce_over_group(groupIdx, gz, std::plus<>());
 #endif
 
 	global_energy = energy;
 	int* gradient_genotype = (int*)fgradient_genotype;
 
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
 		// Scaling gradient for translational genes as
 		// their corresponding gradients were calculated in the space
@@ -821,7 +823,7 @@ void gpu_calc_energrad(
  	// ------------------------------------------
 	// Obtaining rotation-related gradients
 	// ------------------------------------------
-	if (item_ct1.get_local_id(2) == 0)
+	if (threadIdx_x == 0)
 	{
 #if defined (PRINT_GRAD_ROTATION_GENES)
 		printf("\n%s\n", "----------------------------------------------------------");
@@ -830,14 +832,7 @@ void gpu_calc_energrad(
 
 		// Derived from rotation.py/axisangle_to_q()
 		// genes[3:7] = rotation.axisangle_to_q(torque, rad)
-
-		/*
-		DPCT1017:32: The sycl::fast_length call is used instead of the
-		norm3df call. These two calls do not provide exactly the same
-		functionality. Check the potential precision and/or performance
-		issues for the generated code.
-		*/
-		float torque_length = sycl::fast_length(sycl::float3(torque_rot.x(), torque_rot.y(), torque_rot.z()));
+		float torque_length = SYCL_LENGTH(sycl::float3(torque_rot.x(), torque_rot.y(), torque_rot.z()));
 		torque_length += (torque_length < 1e-20f) * 1e-20f;
 		
 		#if defined (PRINT_GRAD_ROTATION_GENES)
@@ -1033,9 +1028,9 @@ void gpu_calc_energrad(
 	// ------------------------------------------
 	uint32_t num_torsion_genes = cData.dockpars.num_of_genes - 6;
 	
-	for (uint32_t idx = item_ct1.get_local_id(2);
+	for (uint32_t idx = threadIdx_x;
 				  idx < num_torsion_genes * cData.dockpars.num_of_atoms;
-				  idx += item_ct1.get_local_range().get(2))
+				  idx += blockDim_x)
 	{
 		uint32_t rotable_atom_cnt = idx / num_torsion_genes;
 		uint32_t rotbond_id = idx - rotable_atom_cnt * num_torsion_genes; // this is a bit cheaper than % (modulo)
@@ -1056,14 +1051,7 @@ void gpu_calc_energrad(
 		rotation_unitvec.x() = calc_coords[atom2_id].x() - atomRef_coords.x();
 		rotation_unitvec.y() = calc_coords[atom2_id].y() - atomRef_coords.y();
 		rotation_unitvec.z() = calc_coords[atom2_id].z() - atomRef_coords.z();
-
-		/*
-		DPCT1017:34: The sycl::fast_length call is used instead of the
-		rnorm3df call. These two calls do not provide exactly the same
-		functionality. Check the potential precision and/or performance
-		issues for the generated code.
-		*/
-		float l = SYCL_RECIP(sycl::fast_length(sycl::float3(rotation_unitvec.x(), rotation_unitvec.y(), rotation_unitvec.z())));
+		float l = SYCL_RECIP(SYCL_LENGTH(sycl::float3(rotation_unitvec.x(), rotation_unitvec.y(), rotation_unitvec.z())));
 		rotation_unitvec.x() *= l;
 		rotation_unitvec.y() *= l;
 		rotation_unitvec.z() *= l;
@@ -1106,9 +1094,9 @@ void gpu_calc_energrad(
 
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
 
-		for (uint32_t gene_cnt = item_ct1.get_local_id(2);
+		for (uint32_t gene_cnt = threadIdx_x;
 					  gene_cnt < cData.dockpars.num_of_genes;
-					  gene_cnt += item_ct1.get_local_range().get(2))
+					  gene_cnt += blockDim_x)
 		{
 			fgradient_genotype[gene_cnt] = ONEOVERTERMSCALE * (float)gradient_genotype[gene_cnt];
 		}
@@ -1116,9 +1104,9 @@ void gpu_calc_energrad(
 		item_ct1.barrier(SYCL_MEMORY_SPACE);
 
 #if defined (CONVERT_INTO_ANGSTROM_RADIAN)
-		for (uint32_t gene_cnt = item_ct1.get_local_id(2) + 3; // Only for gene_cnt > 2 means start gene_cnt at 3
+		for (uint32_t gene_cnt = threadIdx_x + 3; // Only for gene_cnt > 2 means start gene_cnt at 3
 					  gene_cnt < cData.dockpars.num_of_genes;
-					  gene_cnt += item_ct1.get_local_range().get(2))
+					  gene_cnt += blockDim_x)
 		{
 			fgradient_genotype[gene_cnt] *= cData.dockpars.grid_spacing * cData.dockpars.grid_spacing * SCFACTOR_ANGSTROM_RADIAN;
 		}
