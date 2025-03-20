@@ -71,7 +71,16 @@ gpu_gradient_minAD_kernel(
 	float *best_energy,
 	float *rho,
 	int *cons_succ,
-	int *cons_fail)
+	int *cons_fail
+	#ifdef USE_XMX
+	/* Reduction using matrix units */
+	,
+	sycl::half *data_to_be_reduced,
+	sycl::half *Q_data,
+	sycl::half *tmp
+	/* Reduction using matrix units */
+	#endif
+)
 // The GPU global function performs gradient-based minimization on (some) entities of conformations_next.
 // The number of OpenCL compute units (CU) which should be started equals to num_of_minEntities*num_of_runs.
 // This way the first num_of_lsentities entity of each population will be subjected to local search
@@ -255,6 +264,14 @@ gpu_gradient_minAD_kernel(
 			gradient,
 			item_ct1,
 			cData
+			#ifdef USE_XMX
+			/* Reduction using matrix units */
+			,
+			data_to_be_reduced,
+			Q_data,
+			tmp
+			/* Reduction using matrix units */
+			#endif
 		);
 		// =============================================================
 		// =============================================================
@@ -445,6 +462,14 @@ void gpu_gradient_minAD(
 		sycl::local_accessor<int, 0> cons_succ_acc_ct1(cgh);
 		sycl::local_accessor<int, 0> cons_fail_acc_ct1(cgh);
 
+		#ifdef USE_XMX
+		/* Reduction using matrix units */
+		sycl::local_accessor<sycl::half, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
+		sycl::local_accessor<sycl::half, 1> Q_data(sycl::range<1>(tM * tK), cgh);
+		sycl::local_accessor<sycl::half, 1> tmp(sycl::range<1>(16 * 16), cgh);
+		/* Reduction using matrix units */
+		#endif
+
 		cgh.parallel_for<class _kernel_ad>(
 			sycl::nd_range<3>(
 				sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads),
@@ -463,6 +488,14 @@ void gpu_gradient_minAD(
 					rho_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					cons_succ_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					cons_fail_acc_ct1.template get_multi_ptr<sycl::access::decorated::yes>().get()
+					#ifdef USE_XMX
+					/* Reduction using matrix units */
+					,
+					data_to_be_reduced.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					Q_data.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					tmp.template get_multi_ptr<sycl::access::decorated::yes>().get()
+					/* Reduction using matrix units */
+					#endif
 				);
 		});
 	}).wait_and_throw();

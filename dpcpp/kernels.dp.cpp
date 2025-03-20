@@ -44,6 +44,239 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define ATOMICSUBF32(pAccumulator, value) \
 	sycl::atomic_ref<float, SYCL_ATOMICS_MEMORY_ORDER, SYCL_ATOMICS_MEM_SCOPE, sycl::access::address_space::local_space>(*pAccumulator) -= ((float)(value))
 
+#ifdef USE_XMX
+/* Reduction using matrix units */
+
+// Implementation based on M.Sc. thesis by Gabin Schieffer at KTH:
+// "Accelerating a Molecular Docking Application by Leveraging Modern Heterogeneous Computing Systemx"
+// https://www.diva-portal.org/smash/get/diva2:1786161/FULLTEXT01.pdf
+
+// We consider that a CUDA fragment is equivalent to a SYCL submatrix
+//
+// Compilation: make DEVICE=XeGPU PLATFORM=NvGPU XMX=ON TESTLS=ad NUMWI=64 test
+
+// If enabled, then using hardcoded inputs
+//#define DEBUG_XMX_INPUTS
+
+// Number of rows/cols of a submatrix: tM, tN, tK
+constexpr int tM = 16;
+constexpr int tN = 16;
+constexpr int tK = 16;
+
+using TA = sycl::half;
+using TB = sycl::half;
+using TC = sycl::half;
+
+// Number of elements of input matrix (to be reduced)
+constexpr int TILE_NELEMS = tM * tK;
+
+using namespace sycl::ext::oneapi::experimental::matrix;
+
+// Printing submatrices contents,
+// which have to be previously copied into an array in local memory.
+// Enclosing the implementation of print_submatrix_sg()
+// within barriers (as initially thought) produces wrong results.
+// Such mistake makes sense since print_submatrix_sg() is called if(wi_Id_Wg <= 31).
+// Extra sync before printing is not needed as long as
+// print_submatrix_sg() is called after joint_matrix functions,
+// which are executed by the entire sub_group (i.e., wi_Id_Wg <= 31)
+
+// Printing within sub-group
+template <typename T, uint NROWS, uint NCOLS, enum layout LAYOUT>
+void print_submatrix_sg (
+	sycl::nd_item<3> item,
+	const char *msg,
+	T *data_to_print
+) {
+	int wg_Id_ND = item.get_group(2);
+
+	sycl::sub_group sg = item.get_sub_group();
+	int wi_Id_sg = sg.get_local_id();
+
+	// Only a single work-item within a sub-group prints
+	if (wg_Id_ND == 0 && wi_Id_sg == 0) {
+		sycl::ext::oneapi::experimental::printf("\n%s", msg);
+		for (uint i = 0; i < NROWS; i++) {
+			sycl::ext::oneapi::experimental::printf("\n[Row %2u]: ", i);
+			for (uint j = 0; j < NCOLS; j++) {
+				if (LAYOUT == layout::row_major) {
+					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
+				}
+				else if (LAYOUT == layout::col_major) {
+					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[j*NROWS+i]));
+				}
+			}
+		}
+		sycl::ext::oneapi::experimental::printf("\n");
+	}
+}
+
+// Printing within work-group
+template <typename T, uint NROWS, uint NCOLS, enum layout LAYOUT>
+void print_submatrix_WG (
+	sycl::nd_item<3> item,
+	const char *msg,
+	T *data_to_print
+) {
+	int wi_Id_Wg = item.get_local_id(2);
+	int wg_Id_ND = item.get_group(2);
+
+	// Only a single work-item within a work-group prints
+	if (wg_Id_ND == 0 && wi_Id_Wg == 0) {
+		sycl::ext::oneapi::experimental::printf("\n%s", msg);
+		for (uint i = 0; i < NROWS; i++) {
+			sycl::ext::oneapi::experimental::printf("\n[Row %2u]: ", i);
+			for (uint j = 0; j < NCOLS; j++) {
+				if (LAYOUT == layout::row_major) {
+					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
+				}
+				else if (LAYOUT == layout::col_major) {
+					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[j*NROWS+i]));
+				}
+			}
+		}
+		sycl::ext::oneapi::experimental::printf("\n");
+    }
+}
+
+void print_wi_indexes (
+	sycl::nd_item<3> item
+) {
+	// Identifying global, local, and work-group ids
+	int wi_Id_ND = item.get_global_id(2); // Returns the wi's position in the NDRange (in dimension 2)
+	int wi_Id_Wg = item.get_local_id(2); // Returns the wi's position within the current wg (in dimension 2)
+	int wg_Id_ND = item.get_group(2); // Returns the wg's position within the overal NDRange (in dimension 2)
+	int wg_Size = item.get_local_range(2); // Returns the number of wis per wg (in dimension 2)
+
+	// Identifying sub-groups
+	sycl::sub_group sg = item.get_sub_group();
+	int sg_Range = sg.get_group_range().get(0); // Returns the number of subgroups within the wg
+	int sg_Id_Wg = sg.get_group_id().get(0); // Returns the index of the subgroup within the wg
+	int sg_Size = sg.get_local_range().get(0); // Returns the number of wis per subgroup
+	int wi_Id_sg = sg.get_local_id(); // Returns the index of the work-item within its subgroup
+
+	sycl::ext::oneapi::experimental::printf(
+		"wi_Id_ND: %i, \twi_Id_Wg: %i, \twg_Id_ND: %i,\twg_Size: %i, \tsg_Range: %i, \tsg_Id_Wg: %i, \tsg_Size: %i, \twi_Id_sg: %i\n",
+		wi_Id_ND, wi_Id_Wg, wg_Id_ND, wg_Size, sg_Range, sg_Id_Wg, sg_Size, wi_Id_sg);
+}
+
+// Q_data points to an array to be loaded to sub_Q.
+// sub_Q is a submatrix configured as
+// "use::a" (1st matrix mult operand) and "tM x tK" (shape).
+// Hence, Q_data holds the data of the sub_Q submatrix
+void fill_Q (
+	sycl::nd_item<3> item,
+	TA *Q_data
+) {
+	sycl::sub_group sg = item.get_sub_group();
+	int wi_Id_sg = sg.get_local_id();
+	int sg_Size = sg.get_local_range().get(0);
+
+	// Slightly improved multi-threaded implementation.
+	// IMPORTANT: this is computed by a sub-group,
+	// and thus, the stride MUST be "sg_Size" instead of "wg_Size"
+	for (uint i = wi_Id_sg; i < tM/4; i+=sg_Size) {	// Row counter: how many rows (of 4x4 blocks) are there in the matrix?
+		for (uint j = 0; j < tK/4; j++) {	// Col counter: how many cols (of 4x4 blocks) are there in the matrix?
+			for (uint ii = 0; ii < 4; ii++) {
+				for (uint jj = 0; jj < 4; jj++) {
+					//Q_data[4 * (tM*i + j) + 16*ii + jj] = (ii == jj)? 1.0f: 0.0f; // Row-major
+					Q_data[4 * (tK*j + i) + 16*jj + ii] = (ii == jj)? 1.0f: 0.0f; // Col-major
+				}
+			}
+		}
+	}
+
+	/*
+	print_submatrix_sg<TA, tM, tK, layout::col_major>(item, "Q_data [inside fill_Q()]", Q_data);
+	*/
+}
+
+void print_reduced_values (
+	sycl::nd_item<3> item,
+	const char *msg,
+	sycl::half *data_to_be_reduced_arranged
+){
+	int wi_Id_Wg = item.get_local_id(2);
+	int wg_Id_ND = item.get_group(2);
+
+	if (wg_Id_ND == 0 && wi_Id_Wg == 0) {
+		sycl::ext::oneapi::experimental::printf("\n%s: \t%5.3f \t%5.3f \t%5.3f \t%5.3f\n", msg,
+			float(data_to_be_reduced_arranged[0]), float(data_to_be_reduced_arranged[1]), float(data_to_be_reduced_arranged[2]), float(data_to_be_reduced_arranged[3]));
+	}
+}
+
+// Col_major for T_JM_A: is supported in the RTX3050Ti for current matrix shape (16 x 16 x 16) and data type (sycl::half)
+using T_JM_A = joint_matrix<sycl::sub_group, TA, use::a, tM, tK, layout::col_major>;
+using T_JM_B = joint_matrix<sycl::sub_group, TB, use::b, tK, tN, layout::col_major>;
+using T_JM_C = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
+
+void reduce_via_matrix_units (
+	sycl::nd_item<3> item,
+	sycl::half *data_to_be_reduced,
+	sycl::half *Q_data,
+	sycl::half *tmp
+) {
+	sycl::sub_group sg = item.get_sub_group();
+	int sg_Id_Wg = sg.get_group_id().get(0);
+
+	item.barrier(SYCL_MEMORY_SPACE);
+
+	/*
+	print_wi_indexes(item);
+	*/
+
+	// Only a single sub-group per work-group performs reduction
+	if (sg_Id_Wg == 0) {
+		// Declaring and filling submatrices
+		T_JM_B sub_P;
+		joint_matrix_fill(sg, sub_P, 1.0f); // P: only ones
+
+		T_JM_C sub_V;
+		joint_matrix_fill(sg, sub_V, 0.0f); // Output: initialize to zeros
+
+		// 1. Accumulate the values: V <- AP + V
+		for(uint i = 0; i < (4 * NUM_OF_THREADS_PER_BLOCK)/(TILE_NELEMS);  i++) {
+			const uint offset = i * TILE_NELEMS; // Moving to next input block
+
+			/*
+			int wg_Id_ND = item.get_group(2);
+			int wi_Id_sg = sg.get_local_id();
+			if (wg_Id_ND == 0 && wi_Id_sg == 0) {
+				sycl::ext::oneapi::experimental::printf("\nLoop: tripcount = %d | iteration = %d | offset = %d", (4 * NUM_OF_THREADS_PER_BLOCK) / TILE_NELEMS, i, offset);
+			}
+			*/
+
+			T_JM_A sub_A;
+			joint_matrix_load(sg, sub_A, sycl::local_ptr<TA>(data_to_be_reduced + offset), tM); // Col-major -> stride is tM
+			joint_matrix_mad(sg, sub_V, sub_A, sub_P, sub_V);
+		}
+
+		// W <- V (required since V must be transformed to "use::b")
+		T_JM_B sub_W;
+		//joint_matrix_copy(sg, sub_V, sub_W); // FIXME: not compiling on RTX3050Ti
+		joint_matrix_store(sg, sub_V, sycl::local_ptr<TC>(tmp), tM, layout::col_major);
+		joint_matrix_load(sg, sub_W, sycl::local_ptr<TC>(tmp), tK); // Col-major -> stride is tK
+
+		T_JM_C sub_C;
+		joint_matrix_fill(sg, sub_C, 0.0f); // Final result
+
+		T_JM_A sub_Q;
+		fill_Q(item, Q_data);
+		joint_matrix_load(sg, sub_Q, sycl::local_ptr<TA>(Q_data), tM);	// Col-major -> stride is tM
+
+		// 2. Perform line sum: C <- QW + C (zero)
+		joint_matrix_mad(sg, sub_C, sub_Q, sub_W, sub_C);
+
+		// 3. Store result in shared memory
+		joint_matrix_store(sg, sub_C, sycl::local_ptr<TA>(data_to_be_reduced), tM, layout::col_major);
+	}
+
+	item.barrier(SYCL_MEMORY_SPACE);
+}
+
+/* Reduction using matrix units */
+#endif
+
 static dpct::constant_memory<GpuData, 0> cData;
 static GpuData cpuData;
 
