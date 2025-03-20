@@ -32,6 +32,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "GpuData.h"
 #include "dpcpp_migration.h"
 
+namespace syclexp = sycl::ext::oneapi::experimental;
+
+#define syclprintf syclexp::printf
+
 #define ATOMICADDI32(pAccumulator, value) \
 	sycl::atomic_ref<int, SYCL_ATOMICS_MEMORY_ORDER, SYCL_ATOMICS_MEM_SCOPE, sycl::access::address_space::local_space>(*pAccumulator) += ((int)(value))
 
@@ -95,19 +99,19 @@ void print_submatrix_sg (
 
 	// Only a single work-item within a sub-group prints
 	if (wg_Id_ND == 0 && wi_Id_sg == 0) {
-		sycl::ext::oneapi::experimental::printf("\n%s", msg);
+		syclprintf("\n%s", msg);
 		for (uint i = 0; i < NROWS; i++) {
-			sycl::ext::oneapi::experimental::printf("\n[Row %2u]: ", i);
+			syclprintf("\n[Row %2u]: ", i);
 			for (uint j = 0; j < NCOLS; j++) {
 				if (LAYOUT == layout::row_major) {
-					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
+					syclprintf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
 				}
 				else if (LAYOUT == layout::col_major) {
-					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[j*NROWS+i]));
+					syclprintf(" %5.3f ", float(data_to_print[j*NROWS+i]));
 				}
 			}
 		}
-		sycl::ext::oneapi::experimental::printf("\n");
+		syclprintf("\n");
 	}
 }
 
@@ -123,19 +127,19 @@ void print_submatrix_WG (
 
 	// Only a single work-item within a work-group prints
 	if (wg_Id_ND == 0 && wi_Id_Wg == 0) {
-		sycl::ext::oneapi::experimental::printf("\n%s", msg);
+		syclprintf("\n%s", msg);
 		for (uint i = 0; i < NROWS; i++) {
-			sycl::ext::oneapi::experimental::printf("\n[Row %2u]: ", i);
+			syclprintf("\n[Row %2u]: ", i);
 			for (uint j = 0; j < NCOLS; j++) {
 				if (LAYOUT == layout::row_major) {
-					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
+					syclprintf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
 				}
 				else if (LAYOUT == layout::col_major) {
-					sycl::ext::oneapi::experimental::printf(" %5.3f ", float(data_to_print[j*NROWS+i]));
+					syclprintf(" %5.3f ", float(data_to_print[j*NROWS+i]));
 				}
 			}
 		}
-		sycl::ext::oneapi::experimental::printf("\n");
+		syclprintf("\n");
     }
 }
 
@@ -155,7 +159,7 @@ void print_wi_indexes (
 	int sg_Size = sg.get_local_range().get(0); // Returns the number of wis per subgroup
 	int wi_Id_sg = sg.get_local_id(); // Returns the index of the work-item within its subgroup
 
-	sycl::ext::oneapi::experimental::printf(
+	syclprintf(
 		"wi_Id_ND: %i, \twi_Id_Wg: %i, \twg_Id_ND: %i,\twg_Size: %i, \tsg_Range: %i, \tsg_Id_Wg: %i, \tsg_Size: %i, \twi_Id_sg: %i\n",
 		wi_Id_ND, wi_Id_Wg, wg_Id_ND, wg_Size, sg_Range, sg_Id_Wg, sg_Size, wi_Id_sg);
 }
@@ -200,7 +204,7 @@ void print_reduced_values (
 	int wg_Id_ND = item.get_group(2);
 
 	if (wg_Id_ND == 0 && wi_Id_Wg == 0) {
-		sycl::ext::oneapi::experimental::printf("\n%s: \t%5.3f \t%5.3f \t%5.3f \t%5.3f\n", msg,
+		syclprintf("\n%s: \t%5.3f \t%5.3f \t%5.3f \t%5.3f\n", msg,
 			float(data_to_be_reduced_arranged[0]), float(data_to_be_reduced_arranged[1]), float(data_to_be_reduced_arranged[2]), float(data_to_be_reduced_arranged[3]));
 	}
 }
@@ -242,7 +246,7 @@ void reduce_via_matrix_units (
 			int wg_Id_ND = item.get_group(2);
 			int wi_Id_sg = sg.get_local_id();
 			if (wg_Id_ND == 0 && wi_Id_sg == 0) {
-				sycl::ext::oneapi::experimental::printf("\nLoop: tripcount = %d | iteration = %d | offset = %d", (4 * NUM_OF_THREADS_PER_BLOCK) / TILE_NELEMS, i, offset);
+				syclprintf("\nLoop: tripcount = %d | iteration = %d | offset = %d", (4 * NUM_OF_THREADS_PER_BLOCK) / TILE_NELEMS, i, offset);
 			}
 			*/
 
