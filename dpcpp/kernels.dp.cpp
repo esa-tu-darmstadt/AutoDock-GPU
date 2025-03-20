@@ -74,7 +74,7 @@ using TC = sycl::half;
 // Number of elements of input matrix (to be reduced)
 constexpr int TILE_NELEMS = tM * tK;
 
-using namespace sycl::ext::oneapi::experimental::matrix;
+using namespace syclexp::matrix;
 
 // Printing submatrices contents,
 // which have to be previously copied into an array in local memory.
