@@ -714,15 +714,15 @@ void gpu_calc_energrad(
 	// 1. Convert data-to-be-reduced from float to half
 	// and place it in a shared-memory array
 	#ifdef DEBUG_XMX_INPUTS
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = sycl::half(1.0f);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = sycl::half(2.0f);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = sycl::half(3.0f);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = sycl::half(4.0f);
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*sycl::half(*/1.0f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*sycl::half*/(2.0f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*sycl::half(*/3.0f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = /*sycl::half(*/4.0f/*)*/;
 	#else
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = (sycl::half)(torque_rot.x());
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = (sycl::half)(torque_rot.y());
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = (sycl::half)(torque_rot.z());
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = (sycl::half)(energy);
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*(sycl::half)(*/torque_rot.x()/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*(sycl::half)(*/torque_rot.y()/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*(sycl::half)(*/torque_rot.z()/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = /*(sycl::half)(*/energy/*)*/;
 	#endif
 
 	//print_submatrix_WG<sycl::half, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
@@ -768,14 +768,14 @@ void gpu_calc_energrad(
 	// 1. Convert data-to-be-reduced from float to half
 	// and place it in a shared memory array
 	#ifdef DEBUG_XMX_INPUTS
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = sycl::half(22.04f);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = sycl::half(26.05f);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = sycl::half(19.02f);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = sycl::half(30.11f);
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*sycl::half(*/22.04f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*sycl::half(*/26.05f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*sycl::half(*/19.02f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = /*sycl::half(*/30.11f/*)*/;
 	#else
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = (sycl::half)(gx);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = (sycl::half)(gy);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = (sycl::half)(gz);
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*(sycl::half)(*/gx/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*(sycl::half)(*/gy/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*(sycl::half)(*/gz/*)*/;
 	#endif
 
 	//print_submatrix_WG<sycl::half, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
