@@ -72,6 +72,18 @@ using TA = bf16;
 using TB = bf16;
 using TC = float;
 
+float make_fp32(bf16 x) {
+ 	unsigned int y = *((int *)&x);
+	y = y << 16;
+	float *res = reinterpret_cast<float *>(&y);
+	return *res;
+}
+
+bf16 make_bf16(float x) {
+	bf16 res = (*reinterpret_cast<unsigned int *>(&x))>>16;
+	return res;
+}
+
 // Number of elements of input matrix (to be reduced)
 constexpr int TILE_NELEMS = tM * tK;
 
@@ -133,10 +145,20 @@ void print_submatrix_WG (
 			syclprintf("\n[Row %2u]: ", i);
 			for (uint j = 0; j < NCOLS; j++) {
 				if (LAYOUT == layout::row_major) {
-					syclprintf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
+					if (std::is_same<T, bf16>::value == true) {
+						syclprintf(" %5.3f ", make_fp32(data_to_print[i*NCOLS+j]));
+					}
+					else {
+						syclprintf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
+					}
 				}
 				else if (LAYOUT == layout::col_major) {
-					syclprintf(" %5.3f ", float(data_to_print[j*NROWS+i]));
+					if (std::is_same<T, bf16>::value == true) {
+						syclprintf(" %5.3f ", make_fp32(data_to_print[i*NCOLS+j]));
+					}
+					else {
+						syclprintf(" %5.3f ", float(data_to_print[j*NROWS+i]));
+					}
 				}
 			}
 		}
@@ -196,10 +218,11 @@ void fill_Q (
 	*/
 }
 
+template <typename T>
 void print_reduced_values (
 	sycl::nd_item<3> item,
 	const char *msg,
-	sycl::half *data_to_be_reduced_arranged
+	T *data_to_be_reduced_arranged
 ){
 	int wi_Id_Wg = item.get_local_id(2);
 	int wg_Id_ND = item.get_group(2);
@@ -273,7 +296,7 @@ void reduce_via_matrix_units (
 		joint_matrix_mad(sg, sub_C, sub_Q, sub_W, sub_C);
 
 		// 3. Store result in shared memory
-		joint_matrix_store(sg, sub_C, sycl::local_ptr</*TA*/TC>(/*data_to_be_reduced*/tmp), tM, layout::col_major);
+		joint_matrix_store(sg, sub_C, sycl::local_ptr</*TA*/TC>(/*data_to_be_reduced*/tmp), tM, layout::/*col_major*/row_major);
 	}
 
 	item.barrier(SYCL_MEMORY_SPACE);
