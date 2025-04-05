@@ -180,12 +180,21 @@ void query_xmx_capabilities (sycl::queue Q){
 		*/
 
 		// Checking support for specific types
+		/*
 		if (combinations[i].atype == matrix::matrix_type::fp16 &&
 			combinations[i].btype == matrix::matrix_type::fp16 &&
 			combinations[i].ctype == matrix::matrix_type::fp32 &&
 			combinations[i].dtype == matrix::matrix_type::fp32) {
 			printf(" <- A (half), B (half), C (float), D (float)");
 		}
+		*/
+		if (combinations[i].atype == matrix::matrix_type::bf16 &&
+			combinations[i].btype == matrix::matrix_type::bf16 &&
+			combinations[i].ctype == matrix::matrix_type::fp32 &&
+			combinations[i].dtype == matrix::matrix_type::fp32) {
+			printf(" <- A (bf16), B (bf16), C (float), D (float)");
+		}
+		/*
 		if (combinations[i].atype == matrix::matrix_type::fp16 &&
 			combinations[i].btype == matrix::matrix_type::fp16 &&
 			combinations[i].ctype == matrix::matrix_type::fp16 &&
@@ -210,6 +219,7 @@ void query_xmx_capabilities (sycl::queue Q){
 			combinations[i].dtype == matrix::matrix_type::fp32) {
 			printf(" <- A (tf32), B (tf32), C (float), D (float)");
 		}
+		*/
 
 		// Checking types supported for a specific combination
 		if (
