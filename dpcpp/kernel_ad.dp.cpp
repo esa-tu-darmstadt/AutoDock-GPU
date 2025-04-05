@@ -75,9 +75,9 @@ gpu_gradient_minAD_kernel(
 	#ifdef USE_XMX
 	/* Reduction using matrix units */
 	,
-	sycl::half *data_to_be_reduced,
-	sycl::half *Q_data,
-	sycl::half *tmp
+	/*sycl::half*/bf16 *data_to_be_reduced,
+	/*sycl::half*/bf16 *Q_data,
+	/*sycl::half*/float *tmp
 	/* Reduction using matrix units */
 	#endif
 )
@@ -464,9 +464,9 @@ void gpu_gradient_minAD(
 
 		#ifdef USE_XMX
 		/* Reduction using matrix units */
-		sycl::local_accessor<sycl::half, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
-		sycl::local_accessor<sycl::half, 1> Q_data(sycl::range<1>(tM * tK), cgh);
-		sycl::local_accessor<sycl::half, 1> tmp(sycl::range<1>(16 * 16), cgh);
+		sycl::local_accessor</*sycl::half*/bf16, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
+		sycl::local_accessor</*sycl::half*/bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
+		sycl::local_accessor</*sycl::half*/float, 1> tmp(sycl::range<1>(16 * 16), cgh);
 		/* Reduction using matrix units */
 		#endif
 

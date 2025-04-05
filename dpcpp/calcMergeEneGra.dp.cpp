@@ -77,9 +77,9 @@ void gpu_calc_energrad(
 #ifdef USE_XMX
 	/* Reduction using matrix units */
 	,
-	sycl::half *data_to_be_reduced,
-	sycl::half *Q_data,
-	sycl::half *tmp
+	/*sycl::half*/bf16 *data_to_be_reduced,
+	/*sycl::half*/bf16 *Q_data,
+	/*sycl::half*/float *tmp
 	/* Reduction using matrix units */
 #endif
 ) {
