@@ -725,12 +725,12 @@ void gpu_calc_energrad(
 	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = energy;
 	#endif
 
-	//print_submatrix_WG</*sycl::half*/bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
+	//print_submatrix_WG<bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
 
 	// 2. Perform reduction using matrix units
 	reduce_via_matrix_units(item_ct1, data_to_be_reduced, Q_data, tmp);
 	
-	//print_submatrix_WG</*sycl::half*/float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, /*layout::col_major*/layout::row_major>(item_ct1, "\ntmp (row_major)", tmp);
+	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
 
 	// 3. Retrieve result from shared memory
 	torque_rot.x() = tmp[0];
@@ -738,7 +738,7 @@ void gpu_calc_energrad(
 	torque_rot.z() = tmp[2];
 	energy = tmp[3];
 
-	//print_reduced_values(item_ct1, "tx, ty, tz, e", /*data_to_be_reduced*/tmp);
+	//print_reduced_values(item_ct1, "tx, ty, tz, e", tmp);
 
 	/* Reduction using matrix units */
 #else
@@ -780,17 +780,19 @@ void gpu_calc_energrad(
 	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = gz;
 	#endif
 
-	//print_submatrix_WG<sycl::half, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
+	//print_submatrix_WG<bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
 
 	// 2. Perform reduction using matrix units
 	reduce_via_matrix_units(item_ct1, data_to_be_reduced, Q_data, tmp);
+
+	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
 
 	// 3. Retrieve results from shared memory
 	gx = tmp[0];
 	gy = tmp[1];
 	gz = tmp[2];
 
-	//print_reduced_values(item_ct1, "gx, gy, gz", data_to_be_reduced_arranged);
+	//print_reduced_values(item_ct1, "gx, gy, gz", tmp);
 
 	/* Reduction using matrix units */
 #else
