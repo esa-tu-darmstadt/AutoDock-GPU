@@ -259,9 +259,7 @@ void reduce_via_matrix_units (
 
 		// W <- V (required since V must be transformed to "use::b")
 		T_JM_B sub_W;
-		joint_matrix_copy(sg, sub_V, sub_W); // FIXME: not compiling on RTX3050Ti
-		//joint_matrix_store(sg, sub_V, sycl::local_ptr<TC>(tmp), tM, layout::col_major);
-		//joint_matrix_load(sg, sub_W, sycl::local_ptr<TC>(tmp), tK); // Col-major -> stride is tK
+		joint_matrix_copy(sg, sub_V, sub_W);
 
 		T_JM_C sub_C;
 		joint_matrix_fill(sg, sub_C, 0.0f); // Final result
