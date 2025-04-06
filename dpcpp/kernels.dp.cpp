@@ -72,18 +72,6 @@ using TA = bf16;
 using TB = bf16;
 using TC = float;
 
-float make_fp32(bf16 x) {
- 	unsigned int y = *((int *)&x);
-	y = y << 16;
-	float *res = reinterpret_cast<float *>(&y);
-	return *res;
-}
-
-bf16 make_bf16(float x) {
-	bf16 res = (*reinterpret_cast<unsigned int *>(&x))>>16;
-	return res;
-}
-
 // Number of elements of input matrix (to be reduced)
 constexpr int TILE_NELEMS = tM * tK;
 
