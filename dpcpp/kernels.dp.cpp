@@ -145,20 +145,10 @@ void print_submatrix_WG (
 			syclprintf("\n[Row %2u]: ", i);
 			for (uint j = 0; j < NCOLS; j++) {
 				if (LAYOUT == layout::row_major) {
-					if (std::is_same<T, bf16>::value == true) {
-						syclprintf(" %5.3f ", make_fp32(data_to_print[i*NCOLS+j]));
-					}
-					else {
-						syclprintf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
-					}
+					syclprintf(" %5.3f ", float(data_to_print[i*NCOLS+j]));
 				}
 				else if (LAYOUT == layout::col_major) {
-					if (std::is_same<T, bf16>::value == true) {
-						syclprintf(" %5.3f ", make_fp32(data_to_print[i*NCOLS+j]));
-					}
-					else {
-						syclprintf(" %5.3f ", float(data_to_print[j*NROWS+i]));
-					}
+					syclprintf(" %5.3f ", float(data_to_print[j*NROWS+i]));
 				}
 			}
 		}
