@@ -77,9 +77,9 @@ void gpu_calc_energrad(
 #ifdef USE_XMX
 	/* Reduction using matrix units */
 	,
-	/*sycl::half*/bf16 *data_to_be_reduced,
-	/*sycl::half*/bf16 *Q_data,
-	/*sycl::half*/float *tmp
+	bf16 *data_to_be_reduced,
+	bf16 *Q_data,
+	float *tmp
 	/* Reduction using matrix units */
 #endif
 ) {
@@ -714,15 +714,15 @@ void gpu_calc_energrad(
 	// 1. Convert data-to-be-reduced from float to half
 	// and place it in a shared-memory array
 	#ifdef DEBUG_XMX_INPUTS
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*sycl::half(*/1.0f/*)*/;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*sycl::half(*/2.0f/*)*/;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*sycl::half(*/3.0f/*)*/;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = /*sycl::half(*/4.0f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = 1.0f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = 2.0f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = 3.0f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = 4.0f;
 	#else
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*(sycl::half)(*//*make_bf16*/(torque_rot.x());
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*(sycl::half)(*//*make_bf16*/(torque_rot.y());
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*(sycl::half)(*//*make_bf16*/(torque_rot.z());
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = /*(sycl::half)(*//*make_bf16*/(energy);
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = torque_rot.x();
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = torque_rot.y();
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = torque_rot.z();
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = energy;
 	#endif
 
 	//print_submatrix_WG</*sycl::half*/bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
@@ -733,10 +733,10 @@ void gpu_calc_energrad(
 	//print_submatrix_WG</*sycl::half*/float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, /*layout::col_major*/layout::row_major>(item_ct1, "\ntmp (row_major)", tmp);
 
 	// 3. Retrieve result from shared memory
-	torque_rot.x() = /*(float)(data_to_be_reduced*/(tmp[0]);
-	torque_rot.y() = /*(float)(data_to_be_reduced*/(tmp[1]);
-	torque_rot.z() = /*(float)(data_to_be_reduced*/(tmp[2]);
-	energy = /*(float)(data_to_be_reduced*/(tmp[3]);
+	torque_rot.x() = tmp[0];
+	torque_rot.y() = tmp[1];
+	torque_rot.z() = tmp[2];
+	energy = tmp[3];
 
 	//print_reduced_values(item_ct1, "tx, ty, tz, e", /*data_to_be_reduced*/tmp);
 
@@ -770,14 +770,14 @@ void gpu_calc_energrad(
 	// 1. Convert data-to-be-reduced from float to half
 	// and place it in a shared memory array
 	#ifdef DEBUG_XMX_INPUTS
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*sycl::half(*/22.04f/*)*/;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*sycl::half(*/26.05f/*)*/;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*sycl::half(*/19.02f/*)*/;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = /*sycl::half(*/30.11f/*)*/;
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = 22.04f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = 26.05f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = 19.02f;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = 30.11f;
 	#else
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = /*(sycl::half)(*//*make_bf16*/(gx);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = /*(sycl::half)(*//*make_bf16*/(gy);
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = /*(sycl::half)(*//*make_bf16*/(gz);
+	data_to_be_reduced[4*item_ct1.get_local_id(2)] = gx;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = gy;
+	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = gz;
 	#endif
 
 	//print_submatrix_WG<sycl::half, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
@@ -786,9 +786,9 @@ void gpu_calc_energrad(
 	reduce_via_matrix_units(item_ct1, data_to_be_reduced, Q_data, tmp);
 
 	// 3. Retrieve results from shared memory
-	gx = /*(float)(data_to_be_reduced*/(tmp[0]);
-	gy = /*(float)(data_to_be_reduced*/(tmp[1]);
-	gz = /*(float)(data_to_be_reduced*/(tmp[2]);
+	gx = tmp[0];
+	gy = tmp[1];
+	gz = tmp[2];
 
 	//print_reduced_values(item_ct1, "gx, gy, gz", data_to_be_reduced_arranged);
 
