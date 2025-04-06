@@ -272,7 +272,7 @@ void reduce_via_matrix_units (
 		joint_matrix_mad(sg, sub_C, sub_Q, sub_W, sub_C);
 
 		// 3. Store result in shared memory
-		joint_matrix_store(sg, sub_C, sycl::local_ptr</*TA*/TC>(/*data_to_be_reduced*/tmp), tM, layout::/*col_major*/row_major);
+		joint_matrix_store(sg, sub_C, sycl::local_ptr<TC>(tmp), tM, layout::row_major);
 	}
 
 	item.barrier(SYCL_MEMORY_SPACE);
