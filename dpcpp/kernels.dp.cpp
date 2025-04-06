@@ -211,7 +211,7 @@ void print_reduced_values (
 	}
 }
 
-// Col_major for T_JM_A: is supported in the RTX3050Ti for current matrix shape (16 x 16 x 16) and data type (sycl::half)
+// Col_major for T_JM_A: is supported in the RTX3050Ti for current matrix shape (16 x 16 x 16) and data type (bfloat16)
 using T_JM_A = joint_matrix<sycl::sub_group, TA, use::a, tM, tK, layout::col_major>;
 using T_JM_B = joint_matrix<sycl::sub_group, TB, use::b, tK, tN, layout::col_major>;
 using T_JM_C = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
