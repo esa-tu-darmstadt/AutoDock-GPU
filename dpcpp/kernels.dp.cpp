@@ -234,7 +234,10 @@ void reduce_via_matrix_units (
 
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	// Defining multi-ptr from raw pointer
-	auto data_to_be_reduced_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(data_to_be_reduced_global);
+	int blockIdx_x = item.get_group(2);
+	int blockDim_x = item.get_local_range(2);
+	int block_offset = blockIdx_x * 4 * blockDim_x;
+	auto data_to_be_reduced_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(data_to_be_reduced_global + block_offset);
 	#endif
 
 	item.barrier(SYCL_MEMORY_SPACE);
