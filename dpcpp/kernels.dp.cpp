@@ -62,6 +62,9 @@ namespace syclexp = sycl::ext::oneapi::experimental;
 // If enabled, then using hardcoded inputs
 //#define DEBUG_XMX_INPUTS
 
+// If enabled, then using global memory instead of SLM for holding data-to-be-reduced
+#define USE_GLOB_SPACE_XMX_INPUTS
+
 // Number of rows/cols of a submatrix: tM, tN, tK
 constexpr int tM = 16;
 constexpr int tN = 16;
@@ -218,12 +221,24 @@ using T_JM_C = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
 
 void reduce_via_matrix_units (
 	sycl::nd_item<3> item,
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	bf16 *data_to_be_reduced_global,
+	#else
 	bf16 *data_to_be_reduced,
+	#endif
 	bf16 *Q_data,
 	float *tmp
 ) {
 	sycl::sub_group sg = item.get_sub_group();
 	int sg_Id_Wg = sg.get_group_id().get(0);
+
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	// Defining multi-ptr from raw pointer
+	int blockIdx_x = item.get_group(2);
+	int blockDim_x = item.get_local_range(2);
+	int block_offset = blockIdx_x * 4 * blockDim_x;
+	auto data_to_be_reduced_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(data_to_be_reduced_global + block_offset);
+	#endif
 
 	item.barrier(SYCL_MEMORY_SPACE);
 
@@ -253,7 +268,16 @@ void reduce_via_matrix_units (
 			*/
 
 			T_JM_A sub_A;
-			joint_matrix_load(sg, sub_A, sycl::local_ptr<TA>(data_to_be_reduced + offset), tM); // Col-major -> stride is tM
+			joint_matrix_load(
+				sg,
+				sub_A,
+				#ifdef USE_GLOB_SPACE_XMX_INPUTS
+				(data_to_be_reduced_mptr + offset),
+				#else
+				sycl::local_ptr<TA>(data_to_be_reduced + offset),
+				#endif
+				tM); // Col-major -> stride is tM
+
 			joint_matrix_mad(sg, sub_V, sub_A, sub_P, sub_V);
 		}
 
