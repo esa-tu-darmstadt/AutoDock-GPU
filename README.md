@@ -28,9 +28,8 @@ See [more relevant papers](https://github.com/ccsb-scripps/AutoDock-GPU/wiki/Pub
 
 | Operating system                         | CPU                          | GPU                                                  |
 |:----------------------------------------:|:----------------------------:|:----------------------------------------------------:|
-|CentOS 6.7 & 6.8 / Ubuntu 14.04, 16.04, 20.04, 22.04   | Intel SDK for OpenCL 2017, oneAPI 2023.1    | AMD APP SDK v3.0 / CUDA 9, 10, and 11, 12 / oneAPI 2023.1|
-|macOS Catalina 10.15.1                    | Apple / Intel                | Apple / Intel Iris, Radeon Vega 64, Radeon VII       |
-
+|CentOS 6.7 & 6.8 / Ubuntu 14.04, 16.04, 20.04, 22.04   | Intel SDK for OpenCL 2017, oneAPI 2025.1    | AMD APP SDK v3.0 / CUDA 9, 10, and 11, 12 / oneAPI 2025.1|
+|macOS Catalina 10.15.1                    | Apple / Intel                | Apple / Intel Data Center Max Series / Radeon Vega 64, Radeon VII       |
 
 Other environments or configurations likely work as well, but are untested.
 
