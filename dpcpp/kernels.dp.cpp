@@ -218,6 +218,7 @@ using T_JM_C = joint_matrix<sycl::sub_group, TC, use::accumulator, tM, tN>;
 
 void reduce_via_matrix_units (
 	sycl::nd_item<3> item,
+	bf16 *data_to_be_reduced_global,
 	bf16 *data_to_be_reduced,
 	bf16 *Q_data,
 	float *tmp

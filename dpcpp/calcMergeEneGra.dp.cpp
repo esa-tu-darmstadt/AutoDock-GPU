@@ -77,6 +77,7 @@ void gpu_calc_energrad(
 #ifdef USE_XMX
 	/* Reduction using matrix units */
 	,
+	bf16 *data_to_be_reduced_global,
 	bf16 *data_to_be_reduced,
 	bf16 *Q_data,
 	float *tmp
@@ -728,7 +729,7 @@ void gpu_calc_energrad(
 	//print_submatrix_WG<bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
 
 	// 2. Perform reduction using matrix units
-	reduce_via_matrix_units(item_ct1, data_to_be_reduced, Q_data, tmp);
+	reduce_via_matrix_units(item_ct1, data_to_be_reduced_global, data_to_be_reduced, Q_data, tmp);
 	
 	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
 
@@ -783,7 +784,7 @@ void gpu_calc_energrad(
 	//print_submatrix_WG<bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
 
 	// 2. Perform reduction using matrix units
-	reduce_via_matrix_units(item_ct1, data_to_be_reduced, Q_data, tmp);
+	reduce_via_matrix_units(item_ct1, data_to_be_reduced_global, data_to_be_reduced, Q_data, tmp);
 
 	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
 
