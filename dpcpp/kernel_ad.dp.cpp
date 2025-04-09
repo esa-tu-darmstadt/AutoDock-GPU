@@ -75,8 +75,11 @@ gpu_gradient_minAD_kernel(
 	#ifdef USE_XMX
 	/* Reduction using matrix units */
 	,
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	bf16 *data_to_be_reduced_global,
+	#else
 	bf16 *data_to_be_reduced,
+	#endif
 	bf16 *Q_data,
 	float *tmp
 	/* Reduction using matrix units */
@@ -268,8 +271,11 @@ gpu_gradient_minAD_kernel(
 			#ifdef USE_XMX
 			/* Reduction using matrix units */
 			,
+			#ifdef USE_GLOB_SPACE_XMX_INPUTS
 			data_to_be_reduced_global,
+			#else
 			data_to_be_reduced,
+			#endif
 			Q_data,
 			tmp
 			/* Reduction using matrix units */
@@ -466,11 +472,14 @@ void gpu_gradient_minAD(
 
 		#ifdef USE_XMX
 		/* Reduction using matrix units */
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
 		//Replacing "data_to_be_reduced" in SLM with
 		//data_to_be_reduced_global in global memory
 		int nelems_data_to_be_reduced = blocks * (4 * threads);
 		bf16 *data_to_be_reduced_global = sycl::malloc_device<bf16>(nelems_data_to_be_reduced, queue);
+		#else
 		sycl::local_accessor<bf16, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
+		#endif
 		sycl::local_accessor<bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
 		sycl::local_accessor<float, 1> tmp(sycl::range<1>(4 * threads), cgh);
 		/* Reduction using matrix units */
@@ -497,8 +506,11 @@ void gpu_gradient_minAD(
 					#ifdef USE_XMX
 					/* Reduction using matrix units */
 					,
+					#ifdef USE_GLOB_SPACE_XMX_INPUTS
 					data_to_be_reduced_global,
+					#else
 					data_to_be_reduced.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					#endif
 					Q_data.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					tmp.template get_multi_ptr<sycl::access::decorated::yes>().get()
 					/* Reduction using matrix units */

@@ -77,14 +77,18 @@ void gpu_calc_energrad(
 #ifdef USE_XMX
 	/* Reduction using matrix units */
 	,
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	bf16 *data_to_be_reduced_global,
+	#else
 	bf16 *data_to_be_reduced,
+	#endif
 	bf16 *Q_data,
 	float *tmp
 	/* Reduction using matrix units */
 #endif
 ) {
 	int threadIdx_x = item_ct1.get_local_id(2);
+	int blockIdx_x = item_ct1.get_group(2);
 	int blockDim_x = item_ct1.get_local_range(2);
 	auto groupIdx = item_ct1.get_group();
 
@@ -714,22 +718,52 @@ void gpu_calc_energrad(
 
 	// 1. Convert data-to-be-reduced from float to half
 	// and place it in a shared-memory array
+	int block_offset = blockIdx_x * 4 * blockDim_x;
+	int thread_offset = threadIdx_x * 4;
+	int full_offset = block_offset + thread_offset;
+
 	#ifdef DEBUG_XMX_INPUTS
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = 1.0f;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = 2.0f;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = 3.0f;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = 4.0f;
+
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	data_to_be_reduced_global[full_offset] = 1.0f;
+	data_to_be_reduced_global[full_offset + 1] = 2.0f;
+	data_to_be_reduced_global[full_offset + 2] = 3.0f;
+	data_to_be_reduced_global[full_offset + 3] = 4.0f;
 	#else
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = torque_rot.x();
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = torque_rot.y();
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = torque_rot.z();
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = energy;
+	data_to_be_reduced[thread_offset] = 1.0f;
+	data_to_be_reduced[thread_offset + 1] = 2.0f;
+	data_to_be_reduced[thread_offset + 2] = 3.0f;
+	data_to_be_reduced[thread_offset + 3] = 4.0f;
 	#endif
+
+	#else // Real XMX inputs
+
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	data_to_be_reduced_global[full_offset] = torque_rot.x();
+	data_to_be_reduced_global[full_offset + 1] = torque_rot.y();
+	data_to_be_reduced_global[full_offset + 2] = torque_rot.z();
+	data_to_be_reduced_global[full_offset + 3] = energy;
+	#else
+	data_to_be_reduced[thread_offset] = torque_rot.x();
+	data_to_be_reduced[thread_offset + 1] = torque_rot.y();
+	data_to_be_reduced[thread_offset + 2] = torque_rot.z();
+	data_to_be_reduced[thread_offset + 3] = energy;
+	#endif
+
+	#endif // DEBUG_XMX_INPUTS
 
 	//print_submatrix_WG<bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
 
 	// 2. Perform reduction using matrix units
-	reduce_via_matrix_units(item_ct1, data_to_be_reduced_global, data_to_be_reduced, Q_data, tmp);
+	reduce_via_matrix_units(
+		item_ct1,
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		data_to_be_reduced_global,
+		#else
+		data_to_be_reduced,
+		#endif
+		Q_data,
+		tmp);
 	
 	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
 
@@ -771,20 +805,45 @@ void gpu_calc_energrad(
 	// 1. Convert data-to-be-reduced from float to half
 	// and place it in a shared memory array
 	#ifdef DEBUG_XMX_INPUTS
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = 22.04f;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = 26.05f;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = 19.02f;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 3] = 30.11f;
+
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	data_to_be_reduced_global[full_offset] = 22.04f;
+	data_to_be_reduced_global[full_offset + 1] = 26.05f;
+	data_to_be_reduced_global[full_offset + 2] = 19.02f;
+	data_to_be_reduced_global[full_offset + 3] = 30.11f;
 	#else
-	data_to_be_reduced[4*item_ct1.get_local_id(2)] = gx;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 1] = gy;
-	data_to_be_reduced[4*item_ct1.get_local_id(2) + 2] = gz;
+	data_to_be_reduced[thread_offset] = 22.04f;
+	data_to_be_reduced[thread_offset + 1] = 26.05f;
+	data_to_be_reduced[thread_offset + 2] = 19.02f;
+	data_to_be_reduced[thread_offset + 3] = 30.11f;
 	#endif
+
+	#else // Real XMX inputs
+
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	data_to_be_reduced_global[full_offset] = gx;
+	data_to_be_reduced_global[full_offset + 1] = gy;
+	data_to_be_reduced_global[full_offset + 2] = gz;
+	#else
+	data_to_be_reduced[thread_offset] = gx;
+	data_to_be_reduced[thread_offset + 1] = gy;
+	data_to_be_reduced[thread_offset + 2] = gz;
+	#endif
+
+	#endif // DEBUG_XMX_INPUTS
 
 	//print_submatrix_WG<bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(item_ct1, "\ndata_to_be_reduced (col_major)", data_to_be_reduced);
 
 	// 2. Perform reduction using matrix units
-	reduce_via_matrix_units(item_ct1, data_to_be_reduced_global, data_to_be_reduced, Q_data, tmp);
+	reduce_via_matrix_units(
+		item_ct1,
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		data_to_be_reduced_global,
+		#else
+		data_to_be_reduced,
+		#endif
+		Q_data,
+		tmp);
 
 	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
 
