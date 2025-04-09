@@ -223,10 +223,11 @@ void reduce_via_matrix_units (
 	sycl::nd_item<3> item,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	bf16 *data_to_be_reduced_global,
+	bf16* Q_data_global,
 	#else
 	bf16 *data_to_be_reduced,
-	#endif
 	bf16 *Q_data,
+	#endif
 	float *tmp
 ) {
 	sycl::sub_group sg = item.get_sub_group();
@@ -238,6 +239,13 @@ void reduce_via_matrix_units (
 	int blockDim_x = item.get_local_range(2);
 	int block_offset = blockIdx_x * 4 * blockDim_x;
 	auto data_to_be_reduced_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(data_to_be_reduced_global + block_offset);
+
+	auto Q_data_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(Q_data_global);
+
+	// Filling Q_data_global only using a single work group
+	if (blockIdx_x == 0) {
+		fill_Q(item, Q_data_global);
+	}
 	#endif
 
 	item.barrier(SYCL_MEMORY_SPACE);
@@ -289,8 +297,17 @@ void reduce_via_matrix_units (
 		joint_matrix_fill(sg, sub_C, 0.0f); // Final result
 
 		T_JM_A sub_Q;
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		// Filling Q_data_global only using a single work group is performed above
+		joint_matrix_load(
+			sg,
+			sub_Q,
+			Q_data_mptr,
+			tM);	// Col-major -> stride is tM
+		#else
 		fill_Q(item, Q_data);
 		joint_matrix_load(sg, sub_Q, sycl::local_ptr<TA>(Q_data), tM);	// Col-major -> stride is tM
+		#endif
 
 		// 2. Perform line sum: C <- QW + C (zero)
 		joint_matrix_mad(sg, sub_C, sub_Q, sub_W, sub_C);

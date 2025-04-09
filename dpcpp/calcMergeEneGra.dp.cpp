@@ -79,10 +79,11 @@ void gpu_calc_energrad(
 	,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	bf16 *data_to_be_reduced_global,
+	bf16 *Q_data_global,
 	#else
 	bf16 *data_to_be_reduced,
-	#endif
 	bf16 *Q_data,
+	#endif
 	float *tmp
 	/* Reduction using matrix units */
 #endif
@@ -770,10 +771,11 @@ void gpu_calc_energrad(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
 		data_to_be_reduced_global,
+		Q_data_global,
 		#else
 		data_to_be_reduced,
-		#endif
 		Q_data,
+		#endif
 		tmp);
 	
 	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
@@ -861,10 +863,11 @@ void gpu_calc_energrad(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
 		data_to_be_reduced_global,
+		Q_data_global,
 		#else
 		data_to_be_reduced,
-		#endif
 		Q_data,
+		#endif
 		tmp);
 
 	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
