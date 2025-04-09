@@ -63,7 +63,7 @@ namespace syclexp = sycl::ext::oneapi::experimental;
 //#define DEBUG_XMX_INPUTS
 
 // If enabled, then using global memory instead of SLM for holding data-to-be-reduced
-//#define USE_GLOB_SPACE_XMX_INPUTS
+#define USE_GLOB_SPACE_XMX_INPUTS
 
 // Number of rows/cols of a submatrix: tM, tN, tK
 constexpr int tM = 16;
@@ -232,6 +232,11 @@ void reduce_via_matrix_units (
 	sycl::sub_group sg = item.get_sub_group();
 	int sg_Id_Wg = sg.get_group_id().get(0);
 
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	// Defining multi-ptr from raw pointer
+	auto data_to_be_reduced_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(data_to_be_reduced_global);
+	#endif
+
 	item.barrier(SYCL_MEMORY_SPACE);
 
 	/*
@@ -264,7 +269,7 @@ void reduce_via_matrix_units (
 				sg,
 				sub_A,
 				#ifdef USE_GLOB_SPACE_XMX_INPUTS
-				(data_to_be_reduced_global + offset),
+				(data_to_be_reduced_mptr + offset),
 				#else
 				sycl::local_ptr<TA>(data_to_be_reduced + offset),
 				#endif
