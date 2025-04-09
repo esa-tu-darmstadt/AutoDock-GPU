@@ -67,10 +67,10 @@ gpu_gradient_minAdam_kernel(
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	bf16 *data_to_be_reduced_global,
 	#else
-	/*sycl::half*/bf16 *data_to_be_reduced,
+	bf16 *data_to_be_reduced,
 	#endif
-	/*sycl::half*/bf16 *Q_data,
-	/*sycl::half*/float *tmp
+	bf16 *Q_data,
+	float *tmp
 	/* Reduction using matrix units */
 	#endif
 )
@@ -473,10 +473,10 @@ void gpu_gradient_minAdam(
 		int nelems_data_to_be_reduced = blocks * (4 * threads);
 		bf16 *data_to_be_reduced_global = sycl::malloc_device<bf16>(nelems_data_to_be_reduced, queue);
 		#else
-		sycl::local_accessor</*sycl::half*/bf16, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
+		sycl::local_accessor<bf16, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
 		#endif
-		sycl::local_accessor</*sycl::half*/bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
-		sycl::local_accessor</*sycl::half*/float, 1> tmp(sycl::range<1>(16 * 16), cgh);
+		sycl::local_accessor<bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
+		sycl::local_accessor<float, 1> tmp(sycl::range<1>(16 * 16), cgh);
 		/* Reduction using matrix units */
 		#endif
 
