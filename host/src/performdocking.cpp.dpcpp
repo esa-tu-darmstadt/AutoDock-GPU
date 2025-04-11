@@ -835,7 +835,7 @@ try
 
 	// Verifying that the passed work-group size doesn't exceed device's limit
 	auto max_wg_size = queue.get_device().get_info<sycl::info::device::max_work_group_size>();
-	printf("\nWG size \n    Device limit: %lu \n    Actual: k1 = %u | k2 = %u | k3 = %u | k4 = %u | k7 = %u | k8 = %u\n",
+	printf("\nWG size \n    (enable PRINT_KERNEL_WG_SG_SIZES for verifying actual values)\n    Device limit: %lu \n    Requested: k1 = %u | k2 = %u | k3 = %u | k4 = %u | k7 = %u | k8 = %u\n",
 			max_wg_size, kernel1_lxsize, kernel2_lxsize, kernel3_lxsize, kernel4_lxsize, kernel7_lxsize, kernel8_lxsize);
 	assert(max_wg_size >= kernel1_lxsize);
 	assert(max_wg_size >= kernel2_lxsize);
@@ -846,13 +846,13 @@ try
 
 	// Verifying supported sub-group sizes
 	std::vector<size_t> sub_group_sizes = queue.get_device().get_info<sycl::info::device::sub_group_sizes>();
-	printf("\nSG size\n    Device support:");
+	printf("\nSG size \n    (enable PRINT_KERNEL_WG_SG_SIZES for verifying actual values)\n    Device support:");
 	for (auto sz : sub_group_sizes) {
 		printf(" %lu", sz);
 	}
-	printf("\n    Actual: %u\n", sg_sz);
+	printf("\n    Requested: k4 = %u\n", k4_sg_sz);
 
-	bool sg_sz_supported = (std::find(sub_group_sizes.begin(), sub_group_sizes.end(), sg_sz) != sub_group_sizes.end());
+	bool sg_sz_supported = (std::find(sub_group_sizes.begin(), sub_group_sizes.end(), k4_sg_sz) != sub_group_sizes.end());
 	assert(sg_sz_supported == true);
 
 	// Kernel1
