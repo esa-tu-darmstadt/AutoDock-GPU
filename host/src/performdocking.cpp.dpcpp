@@ -850,10 +850,7 @@ try
 	for (auto sz : sub_group_sizes) {
 		printf(" %lu", sz);
 	}
-	printf("\n    Requested: k4 = %u\n", k4_sg_sz);
-
-	bool sg_sz_supported = (std::find(sub_group_sizes.begin(), sub_group_sizes.end(), k4_sg_sz) != sub_group_sizes.end());
-	assert(sg_sz_supported == true);
+	printf("\n");
 
 	// Kernel1
 	#ifdef DOCK_DEBUG
