@@ -499,7 +499,7 @@ void gpu_gradient_minAD(
 			// simply comment the attribute below, and
 			// corroborate the actual sub-group size
 			// by enabling PRINT_KERNEL_WG_SG_SIZES
-			//[[sycl::reqd_sub_group_size(16)]]
+			[[sycl::reqd_sub_group_size(16)]]
 			#endif
 			{
 				#ifdef PRINT_KERNEL_WG_SG_SIZES
