@@ -80,22 +80,6 @@ constexpr int TILE_NELEMS = tM * tK;
 
 using namespace syclexp::matrix;
 
-// Printing WG and SG sizes.
-// This is called per each kernel
-//#define PRINT_KERNEL_WG_SG_SIZES
-
-void print_kernel_wg_sg_sizes (
-	sycl::nd_item<3> item,
-	const char *msg
-) {
-	int threadGlobIdx_x = item.get_global_id(2);
-	int blockDim_x = item.get_local_range(2);
-	if (threadGlobIdx_x == 0) {
-		syclprintf("\n    %s: WG size: %u", msg, blockDim_x);
-		syclprintf(" | SG size: %u\n", sycl::ext::oneapi::this_work_item::get_sub_group().get_local_range()[0]);
-	}
-}
-
 // Printing submatrices contents,
 // which have to be previously copied into an array in local memory.
 // Enclosing the implementation of print_submatrix_sg()
@@ -336,7 +320,23 @@ void reduce_via_matrix_units (
 }
 
 /* Reduction using matrix units */
-#endif
+#endif /* USE_XMX */
+
+// Printing WG and SG sizes.
+// This is called per each kernel
+//#define PRINT_KERNEL_WG_SG_SIZES
+
+void print_kernel_wg_sg_sizes (
+	sycl::nd_item<3> item,
+	const char *msg
+) {
+	int threadGlobIdx_x = item.get_global_id(2);
+	int blockDim_x = item.get_local_range(2);
+	if (threadGlobIdx_x == 0) {
+		syclprintf("\n    %s: WG size: %u", msg, blockDim_x);
+		syclprintf(" | SG size: %u\n", sycl::ext::oneapi::this_work_item::get_sub_group().get_local_range()[0]);
+	}
+}
 
 static dpct::constant_memory<GpuData, 0> cData;
 static GpuData cpuData;
