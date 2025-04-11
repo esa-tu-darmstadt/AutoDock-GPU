@@ -494,7 +494,13 @@ void gpu_gradient_minAD(
 				sycl::range<3>(1, 1, threads)
 			),
 			[=](sycl::nd_item<3> item_ct1)
-			[[sycl::reqd_sub_group_size(k4_sg_sz)]]
+			#ifdef SET_PVC_SPECIFIC
+			// If a sub-group of 32 is desired on PVC,
+			// simply comment the attribute below, and
+			// corroborate the actual sub-group size
+			// by enabling PRINT_KERNEL_WG_SG_SIZES
+			//[[sycl::reqd_sub_group_size(16)]]
+			#endif
 			{
 				#ifdef PRINT_KERNEL_WG_SG_SIZES
 				print_kernel_wg_sg_sizes(item_ct1, "k7");
