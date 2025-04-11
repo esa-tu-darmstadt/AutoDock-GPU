@@ -74,6 +74,11 @@ void gpu_sum_evals(
 				sycl::range<3>(1, 1, threadsPerBlock)
 			),
 			[=](sycl::nd_item<3> item_ct1) {
+
+				#ifdef PRINT_KERNEL_WG_SG_SIZES
+				print_kernel_wg_sg_sizes(item_ct1, "k2");
+				#endif
+
 				gpu_sum_evals_kernel(
 					item_ct1,
 					*cData_ptr_ct1

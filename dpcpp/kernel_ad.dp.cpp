@@ -494,7 +494,12 @@ void gpu_gradient_minAD(
 				sycl::range<3>(1, 1, threads)
 			),
 			[=](sycl::nd_item<3> item_ct1)
-			[[sycl::reqd_sub_group_size(sg_sz)]] {
+			[[sycl::reqd_sub_group_size(k4_sg_sz)]]
+			{
+				#ifdef PRINT_KERNEL_WG_SG_SIZES
+				print_kernel_wg_sg_sizes(item_ct1, "k7");
+				#endif
+
 				gpu_gradient_minAD_kernel(
 					pMem_conformations_next,
 					pMem_energies_next,

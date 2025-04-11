@@ -356,6 +356,11 @@ void gpu_perform_LS(
 				sycl::range<3>(1, 1, threads)
 			),
 			[=](sycl::nd_item<3> item_ct1) {
+
+				#ifdef PRINT_KERNEL_WG_SG_SIZES
+				print_kernel_wg_sg_sizes(item_ct1, "k3");
+				#endif
+
 				gpu_perform_LS_kernel(
 					pMem_conformations_next,
 					pMem_energies_next,

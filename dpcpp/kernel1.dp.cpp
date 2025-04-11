@@ -80,6 +80,11 @@ void gpu_calc_initpop(
 				sycl::range<3>(1, 1, threadsPerBlock)
 			),
 			[=](sycl::nd_item<3> item_ct1) {
+
+				#ifdef PRINT_KERNEL_WG_SG_SIZES
+				print_kernel_wg_sg_sizes(item_ct1, "k1");
+				#endif
+
 				gpu_calc_initpop_kernel(
 					pConformations_current,
 					pEnergies_current,
