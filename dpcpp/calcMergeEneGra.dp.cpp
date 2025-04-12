@@ -753,6 +753,19 @@ void gpu_calc_energrad(
 
 	#endif // DEBUG_XMX_INPUTS
 
+	#ifdef SET_PVC_SPECIFIC
+	map_input_array(
+		item_ct1,
+		data_to_be_reduced,
+		data_to_be_reduced_arranged
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+	#endif
+
 	/*
 	print_submatrix_WG<
 		bf16,
