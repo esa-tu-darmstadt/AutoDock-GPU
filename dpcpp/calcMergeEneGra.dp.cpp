@@ -753,7 +753,7 @@ void gpu_calc_energrad(
 
 	#endif // DEBUG_XMX_INPUTS
 
-	///*
+	/*
 	print_submatrix_WG<
 		bf16,
 		(4 * NUM_OF_THREADS_PER_BLOCK)/tK,
@@ -764,24 +764,24 @@ void gpu_calc_energrad(
 		layout::col_major
 		#endif
 		>(
-		item_ct1,
-		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-			#ifdef SET_PVC_SPECIFIC
-			"\ndata_to_be_reduced_global (row_major)",
+			item_ct1,
+			#ifdef USE_GLOB_SPACE_XMX_INPUTS
+				#ifdef SET_PVC_SPECIFIC
+				"\ndata_to_be_reduced_global (row_major)",
+				#else
+				"\ndata_to_be_reduced_global (col_major)",
+				#endif
+			data_to_be_reduced_global
 			#else
-			"\ndata_to_be_reduced_global (col_major)",
+				#ifdef SET_PVC_SPECIFIC
+				"\ndata_to_be_reduced (row_major)",
+				#else
+				"\ndata_to_be_reduced (col_major)",
+				#endif
+			data_to_be_reduced
 			#endif
-		data_to_be_reduced_global
-		#else
-			#ifdef SET_PVC_SPECIFIC
-			"\ndata_to_be_reduced (row_major)",
-			#else
-			"\ndata_to_be_reduced (col_major)",
-			#endif
-		data_to_be_reduced
-		#endif
 		);
-	//*/
+	*/
 
 	// 2. Perform reduction using matrix units
 	reduce_via_matrix_units(
@@ -793,9 +793,21 @@ void gpu_calc_energrad(
 		data_to_be_reduced,
 		Q_data,
 		#endif
-		tmp);
+		tmp
+	);
 	
-	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
+	/*
+	print_submatrix_WG<
+		float,
+		(4 * NUM_OF_THREADS_PER_BLOCK)/tK,
+		tK,
+		layout::row_major
+		>(
+			item_ct1,
+			"\nreduced data (row_major)",
+			tmp
+		);
+	*/
 
 	// 3. Retrieve result from shared memory
 	torque_rot.x() = tmp[0];
@@ -863,16 +875,33 @@ void gpu_calc_energrad(
 	#endif // DEBUG_XMX_INPUTS
 
 	/*
-	print_submatrix_WG<bf16, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::col_major>(
-		item_ct1,
-		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-		"\ndata_to_be_reduced_global (col_major)",
-		data_to_be_reduced_global
+	print_submatrix_WG<
+		bf16,
+		(4 * NUM_OF_THREADS_PER_BLOCK)/tK,
+		tK,
+		#ifdef SET_PVC_SPECIFIC
+		layout::row_major
 		#else
-		"\ndata_to_be_reduced (col_major)",
-		data_to_be_reduced
+		layout::col_major
 		#endif
-	);
+		>(
+			item_ct1,
+			#ifdef USE_GLOB_SPACE_XMX_INPUTS
+				#ifdef SET_PVC_SPECIFIC
+				"\ndata_to_be_reduced_global (row_major)",
+				#else
+				"\ndata_to_be_reduced_global (col_major)",
+				#endif
+			data_to_be_reduced_global
+			#else
+				#ifdef SET_PVC_SPECIFIC
+				"\ndata_to_be_reduced (row_major)",
+				#else
+				"\ndata_to_be_reduced (col_major)",
+				#endif
+			data_to_be_reduced
+			#endif
+		);
 	*/
 
 	// 2. Perform reduction using matrix units
@@ -885,9 +914,21 @@ void gpu_calc_energrad(
 		data_to_be_reduced,
 		Q_data,
 		#endif
-		tmp);
+		tmp
+	);
 
-	//print_submatrix_WG<float, (4 * NUM_OF_THREADS_PER_BLOCK)/tK, tK, layout::row_major>(item_ct1, "\nreduced data (row_major)", tmp);
+	/*
+	print_submatrix_WG<
+		float,
+		(4 * NUM_OF_THREADS_PER_BLOCK)/tK,
+		tK,
+		layout::row_major
+		>(
+			item_ct1,
+			"\nreduced data (row_major)",
+			tmp
+		);
+	*/
 
 	// 3. Retrieve results from shared memory
 	gx = tmp[0];
