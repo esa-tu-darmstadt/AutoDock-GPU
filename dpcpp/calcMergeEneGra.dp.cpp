@@ -79,9 +79,15 @@ void gpu_calc_energrad(
 	,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	bf16 *data_to_be_reduced_global,
+		#ifdef SET_PVC_SPECIFIC
+		bf16 *data_to_be_reduced_global_arranged,
+		#endif
 	bf16 *Q_data_global,
 	#else
 	bf16 *data_to_be_reduced,
+		#ifdef SET_PVC_SPECIFIC
+		bf16 *data_to_be_reduced_arranged,
+		#endif
 	bf16 *Q_data,
 	#endif
 	float *tmp
@@ -756,8 +762,13 @@ void gpu_calc_energrad(
 	#ifdef SET_PVC_SPECIFIC
 	map_input_array(
 		item_ct1,
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		data_to_be_reduced_global, // TODO: specify offset
+		data_to_be_reduced_global_arranged // TODO: specify offset
+		#else
 		data_to_be_reduced,
 		data_to_be_reduced_arranged
+		#endif
 		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
 		,
 		in_indexes,
