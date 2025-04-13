@@ -234,7 +234,11 @@ void map_input_array (
 		out_indexes[i] = j;
 		#endif
 
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		data_to_be_reduced_global_arranged[j] = data_to_be_reduced_global[i];
+		#else
 		data_to_be_reduced_arranged[j] = data_to_be_reduced[i];
+		#endif
 		//syclprintf("i = %i, j = %i\n", i, j);
 	}
 
@@ -246,7 +250,11 @@ void map_input_array (
 	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
 	int wg_Id_ND = item.get_group(2);
 	if (wg_Id_ND == 0 && wi_Id_Wg == 0) {
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		syclprintf("\n\nInitial indexes (data_to_be_reduced_global)");
+		#else
 		syclprintf("\n\nInitial indexes (data_to_be_reduced)");
+		#endif
 		for (uint i = 0; i < (4 * NUM_OF_THREADS_PER_BLOCK); i++) {
 			if(i % 16 == 0) {
 				syclprintf("\n");
@@ -254,7 +262,11 @@ void map_input_array (
 			syclprintf("\t%3i", in_indexes[i]);
 		}
 
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		syclprintf("\n\nFinal indexes (data_to_be_reduced_global_arranged)");
+		#else
 		syclprintf("\n\nFinal indexes (data_to_be_reduced_arranged)");
+		#endif
 		for (uint i = 0; i < (4 * NUM_OF_THREADS_PER_BLOCK); i++) {
 			if(i % 16 == 0) {
 				syclprintf("\n");
