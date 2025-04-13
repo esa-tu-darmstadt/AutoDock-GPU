@@ -207,8 +207,13 @@ void fill_Q (
 // only works for some layouts (but not for both row- and col-major)
 void map_input_array (
 	sycl::nd_item<3> item,
+	#ifdef USE_GLOB_SPACE_XMX_INPUTS
+	float *data_to_be_reduced_global,
+	float *data_to_be_reduced_global_arranged
+	#else
 	float *data_to_be_reduced,
 	float *data_to_be_reduced_arranged
+	#endif
 	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
 	,
 	uint *in_indexes,
