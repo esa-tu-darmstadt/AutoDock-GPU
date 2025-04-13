@@ -763,8 +763,8 @@ void gpu_calc_energrad(
 	map_input_array(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-		data_to_be_reduced_global, // TODO: specify offset
-		data_to_be_reduced_global_arranged // TODO: specify offset
+		data_to_be_reduced_global + block_offset,
+		data_to_be_reduced_global_arranged + block_offset
 		#else
 		data_to_be_reduced,
 		data_to_be_reduced_arranged
@@ -902,8 +902,8 @@ void gpu_calc_energrad(
 	map_input_array(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-		data_to_be_reduced_global, // TODO: specify offset
-		data_to_be_reduced_global_arranged // TODO: specify offset
+		data_to_be_reduced_global + block_offset,
+		data_to_be_reduced_global_arranged + block_offset
 		#else
 		data_to_be_reduced,
 		data_to_be_reduced_arranged
