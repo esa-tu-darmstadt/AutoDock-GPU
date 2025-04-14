@@ -91,6 +91,11 @@ void gpu_calc_energrad(
 	bf16 *Q_data,
 	#endif
 	float *tmp
+	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+	,
+	uint *in_indexes,
+	uint *out_indexes
+	#endif
 	/* Reduction using matrix units */
 #endif
 ) {

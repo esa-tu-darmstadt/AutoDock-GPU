@@ -89,6 +89,11 @@ gpu_gradient_minAD_kernel(
 	bf16 *Q_data,
 	#endif
 	float *tmp
+	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+	,
+	uint *in_indexes,
+	uint *out_indexes
+	#endif
 	/* Reduction using matrix units */
 	#endif
 )
@@ -292,6 +297,11 @@ gpu_gradient_minAD_kernel(
 			Q_data,
 			#endif
 			tmp
+			#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+			,
+			in_indexes,
+			out_indexes
+			#endif
 			/* Reduction using matrix units */
 			#endif
 		);
@@ -503,6 +513,13 @@ void gpu_gradient_minAD(
 		sycl::local_accessor<bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
 		#endif
 		sycl::local_accessor<float, 1> tmp(sycl::range<1>(4 * threads), cgh);
+
+		// These memories are used only for debugging,
+		// and thus, it is OK to configured them as local
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		sycl::local_accessor<uint, 1> in_indexes(sycl::range<1>(4 * threads), cgh);
+		sycl::local_accessor<uint, 1> out_indexes(sycl::range<1>(4 * threads), cgh);
+		#endif
 		/* Reduction using matrix units */
 		#endif
 
@@ -552,6 +569,12 @@ void gpu_gradient_minAD(
 					Q_data.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					#endif
 					tmp.template get_multi_ptr<sycl::access::decorated::yes>().get()
+
+					#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+					,
+					in_indexes.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+					out_indexes.template get_multi_ptr<sycl::access::decorated::yes>().get()
+					#endif
 					/* Reduction using matrix units */
 					#endif
 				);
