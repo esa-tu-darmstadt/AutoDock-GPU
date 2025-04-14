@@ -91,6 +91,10 @@ void gpu_calc_energrad(
 	bf16 *Q_data,
 	#endif
 	float *tmp
+	#ifdef SET_PVC_SPECIFIC
+	,
+	float *tmp_arranged
+	#endif
 	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
 	,
 	uint *in_indexes,
@@ -835,6 +839,19 @@ void gpu_calc_energrad(
 		tmp
 	);
 
+	#ifdef SET_PVC_SPECIFIC
+	map_input_array(
+		item_ct1,
+		tmp,
+		tmp_arranged
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+	#endif
+
 	/*
 	print_submatrix_WG<
 		float,
@@ -849,10 +866,17 @@ void gpu_calc_energrad(
 	*/
 
 	// 3. Retrieve result from shared memory
+	#ifdef SET_PVC_SPECIFIC
+	torque_rot.x() = tmp_arranged[0];
+	torque_rot.y() = tmp_arranged[1];
+	torque_rot.z() = tmp_arranged[2];
+	energy = tmp_arranged[3];
+	#else
 	torque_rot.x() = tmp[0];
 	torque_rot.y() = tmp[1];
 	torque_rot.z() = tmp[2];
 	energy = tmp[3];
+	#endif
 
 	//print_reduced_values(item_ct1, "tx, ty, tz, e", tmp);
 
@@ -984,6 +1008,19 @@ void gpu_calc_energrad(
 		tmp
 	);
 
+	#ifdef SET_PVC_SPECIFIC
+	map_input_array(
+		item_ct1,
+		tmp,
+		tmp_arranged
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+	#endif
+
 	/*
 	print_submatrix_WG<
 		float,
@@ -998,9 +1035,15 @@ void gpu_calc_energrad(
 	*/
 
 	// 3. Retrieve results from shared memory
+	#ifdef SET_PVC_SPECIFIC
+	gx = tmp_arranged[0];
+	gy = tmp_arranged[1];
+	gz = tmp_arranged[2];
+	#else
 	gx = tmp[0];
 	gy = tmp[1];
 	gz = tmp[2];
+	#endif
 
 	//print_reduced_values(item_ct1, "gx, gy, gz", tmp);
 
