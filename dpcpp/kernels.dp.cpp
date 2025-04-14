@@ -205,14 +205,15 @@ void fill_Q (
 // Reason:
 // For PVC GPUs, the chosen "tM x tN x tK" (i.e., 16 x 16 x 16) matrix configuration
 // only works for some layouts (but not for both row- and col-major)
+template <typename T>
 void map_input_array (
 	sycl::nd_item<3> item,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
-	bf16 *data_to_be_reduced_global,
-	bf16 *data_to_be_reduced_global_arranged
+	T *data_to_be_reduced_global,
+	T *data_to_be_reduced_global_arranged
 	#else
-	bf16 *data_to_be_reduced,
-	bf16 *data_to_be_reduced_arranged
+	T *data_to_be_reduced,
+	T *data_to_be_reduced_arranged
 	#endif
 	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
 	,
