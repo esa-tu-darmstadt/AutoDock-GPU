@@ -79,6 +79,7 @@ gpu_gradient_minAdam_kernel(
 	#endif
 	float *tmp
 	#ifdef SET_PVC_SPECIFIC
+	,
 	float *tmp_arranged
 	#endif
 	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
