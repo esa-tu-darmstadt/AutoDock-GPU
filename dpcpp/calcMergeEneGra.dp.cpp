@@ -79,12 +79,27 @@ void gpu_calc_energrad(
 	,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	bf16 *data_to_be_reduced_global,
+		#ifdef SET_PVC_SPECIFIC
+		bf16 *data_to_be_reduced_global_arranged,
+		#endif
 	bf16 *Q_data_global,
 	#else
 	bf16 *data_to_be_reduced,
+		#ifdef SET_PVC_SPECIFIC
+		bf16 *data_to_be_reduced_arranged,
+		#endif
 	bf16 *Q_data,
 	#endif
 	float *tmp
+	#ifdef SET_PVC_SPECIFIC
+	,
+	float *tmp_arranged
+	#endif
+	#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+	,
+	uint *in_indexes,
+	uint *out_indexes
+	#endif
 	/* Reduction using matrix units */
 #endif
 ) {
@@ -753,6 +768,24 @@ void gpu_calc_energrad(
 
 	#endif // DEBUG_XMX_INPUTS
 
+	#ifdef SET_PVC_SPECIFIC
+	map_input_array(
+		item_ct1,
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		data_to_be_reduced_global + block_offset,
+		data_to_be_reduced_global_arranged + block_offset
+		#else
+		data_to_be_reduced,
+		data_to_be_reduced_arranged
+		#endif
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+	#endif
+
 	/*
 	print_submatrix_WG<
 		bf16,
@@ -768,17 +801,19 @@ void gpu_calc_energrad(
 			#ifdef USE_GLOB_SPACE_XMX_INPUTS
 				#ifdef SET_PVC_SPECIFIC
 				"\ndata_to_be_reduced_global (row_major)",
+				data_to_be_reduced_global_arranged
 				#else
 				"\ndata_to_be_reduced_global (col_major)",
+				data_to_be_reduced_global
 				#endif
-			data_to_be_reduced_global
 			#else
 				#ifdef SET_PVC_SPECIFIC
 				"\ndata_to_be_reduced (row_major)",
+				data_to_be_reduced_arranged
 				#else
 				"\ndata_to_be_reduced (col_major)",
+				data_to_be_reduced
 				#endif
-			data_to_be_reduced
 			#endif
 		);
 	*/
@@ -787,15 +822,36 @@ void gpu_calc_energrad(
 	reduce_via_matrix_units(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-		data_to_be_reduced_global,
+			#ifdef SET_PVC_SPECIFIC
+			data_to_be_reduced_global_arranged,
+			#else
+			data_to_be_reduced_global,
+			#endif
 		Q_data_global,
 		#else
-		data_to_be_reduced,
+			#ifdef SET_PVC_SPECIFIC
+			data_to_be_reduced_arranged,
+			#else
+			data_to_be_reduced,
+			#endif
 		Q_data,
 		#endif
 		tmp
 	);
-	
+
+	#ifdef SET_PVC_SPECIFIC
+	map_input_array(
+		item_ct1,
+		tmp,
+		tmp_arranged
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+	#endif
+
 	/*
 	print_submatrix_WG<
 		float,
@@ -810,10 +866,17 @@ void gpu_calc_energrad(
 	*/
 
 	// 3. Retrieve result from shared memory
+	#ifdef SET_PVC_SPECIFIC
+	torque_rot.x() = tmp_arranged[0];
+	torque_rot.y() = tmp_arranged[1];
+	torque_rot.z() = tmp_arranged[2];
+	energy = tmp_arranged[3];
+	#else
 	torque_rot.x() = tmp[0];
 	torque_rot.y() = tmp[1];
 	torque_rot.z() = tmp[2];
 	energy = tmp[3];
+	#endif
 
 	//print_reduced_values(item_ct1, "tx, ty, tz, e", tmp);
 
@@ -874,6 +937,24 @@ void gpu_calc_energrad(
 
 	#endif // DEBUG_XMX_INPUTS
 
+	#ifdef SET_PVC_SPECIFIC
+	map_input_array(
+		item_ct1,
+		#ifdef USE_GLOB_SPACE_XMX_INPUTS
+		data_to_be_reduced_global + block_offset,
+		data_to_be_reduced_global_arranged + block_offset
+		#else
+		data_to_be_reduced,
+		data_to_be_reduced_arranged
+		#endif
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+	#endif
+
 	/*
 	print_submatrix_WG<
 		bf16,
@@ -889,17 +970,19 @@ void gpu_calc_energrad(
 			#ifdef USE_GLOB_SPACE_XMX_INPUTS
 				#ifdef SET_PVC_SPECIFIC
 				"\ndata_to_be_reduced_global (row_major)",
+				data_to_be_reduced_global_arranged
 				#else
 				"\ndata_to_be_reduced_global (col_major)",
+				data_to_be_reduced_global
 				#endif
-			data_to_be_reduced_global
 			#else
 				#ifdef SET_PVC_SPECIFIC
 				"\ndata_to_be_reduced (row_major)",
+				data_to_be_reduced_arranged
 				#else
 				"\ndata_to_be_reduced (col_major)",
+				data_to_be_reduced
 				#endif
-			data_to_be_reduced
 			#endif
 		);
 	*/
@@ -908,14 +991,35 @@ void gpu_calc_energrad(
 	reduce_via_matrix_units(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-		data_to_be_reduced_global,
+			#ifdef SET_PVC_SPECIFIC
+			data_to_be_reduced_global_arranged,
+			#else
+			data_to_be_reduced_global,
+			#endif
 		Q_data_global,
 		#else
-		data_to_be_reduced,
+			#ifdef SET_PVC_SPECIFIC
+			data_to_be_reduced_arranged,
+			#else
+			data_to_be_reduced,
+			#endif
 		Q_data,
 		#endif
 		tmp
 	);
+
+	#ifdef SET_PVC_SPECIFIC
+	map_input_array(
+		item_ct1,
+		tmp,
+		tmp_arranged
+		#ifdef DEBUG_XMX_INPUTS_INDEX_MAP
+		,
+		in_indexes,
+		out_indexes
+		#endif
+	);
+	#endif
 
 	/*
 	print_submatrix_WG<
@@ -931,9 +1035,15 @@ void gpu_calc_energrad(
 	*/
 
 	// 3. Retrieve results from shared memory
+	#ifdef SET_PVC_SPECIFIC
+	gx = tmp_arranged[0];
+	gy = tmp_arranged[1];
+	gz = tmp_arranged[2];
+	#else
 	gx = tmp[0];
 	gy = tmp[1];
 	gz = tmp[2];
+	#endif
 
 	//print_reduced_values(item_ct1, "gx, gy, gz", tmp);
 
