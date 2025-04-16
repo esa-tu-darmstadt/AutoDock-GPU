@@ -201,10 +201,9 @@ void fill_Q (
 }
 
 #ifdef SET_PVC_SPECIFIC
-// Reordering arrays for correctly reducing input data.
-// Reason:
-// For PVC GPUs, the chosen "tM x tN x tK" (i.e., 16 x 16 x 16) matrix configuration
-// only works for some layouts (but not for both row- and col-major)
+// Transposing array elements for correctly operating data downstream.
+// Reason: on PVC, the chosen 16 x 16 x 16 shape for a use::a matrix
+// can only have a row-major layout
 template <typename T>
 void map_input_array (
 	sycl::nd_item<3> item,
@@ -294,7 +293,9 @@ void print_reduced_values (
 	}
 }
 
-// Col_major for T_JM_A: is supported in the RTX3050Ti for current matrix shape (16 x 16 x 16) and data type (bfloat16)
+// For 16 x 16 x 16 matrix shape and bfloat16 data type
+// NVIDIA supports col_major for T_JM_A
+// PVC supports only row_major for T_JM_A
 #ifdef SET_PVC_SPECIFIC
 using T_JM_A = joint_matrix<sycl::sub_group, TA, use::a, tM, tK, layout::row_major>;
 #else
