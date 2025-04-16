@@ -326,11 +326,6 @@ void reduce_via_matrix_units (
 	auto data_to_be_reduced_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(data_to_be_reduced_global + block_offset);
 
 	auto Q_data_mptr = sycl::multi_ptr<bf16, sycl::access::address_space::global_space>(Q_data_global);
-
-	// Filling Q_data_global only using a single work group
-	if (blockIdx_x == 0) {
-		fill_Q(item, Q_data_global);
-	}
 	#endif
 
 	item.barrier(SYCL_MEMORY_SPACE);
@@ -383,7 +378,12 @@ void reduce_via_matrix_units (
 
 		T_JM_A sub_Q;
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-		// Filling Q_data_global only using a single work group is performed above
+		// Filling Q_data_global using only a single work group,
+		// more precisely, using sub-group 0 of work-group 0.
+		// Reason: this global memory region is only read afterwards
+		if (blockIdx_x == 0) {
+			fill_Q(item, Q_data_global);
+		}
 		joint_matrix_load(
 			sg,
 			sub_Q,
