@@ -201,11 +201,11 @@ void fill_Q (
 }
 
 #ifdef SET_PVC_SPECIFIC
-// Transposing array elements for correctly operating data downstream.
+// Transposing matrix elements (stored as array) for correctly operating data downstream.
 // Reason: on PVC, the chosen 16 x 16 x 16 shape for a use::a matrix
 // can only have a row-major layout
 template <typename T>
-void map_input_array (
+void transpose_matrix (
 	sycl::nd_item<3> item,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
 	T *data_to_be_reduced_global,

@@ -769,7 +769,7 @@ void gpu_calc_energrad(
 	#endif // DEBUG_XMX_INPUTS
 
 	#ifdef SET_PVC_SPECIFIC
-	map_input_array(
+	transpose_matrix(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
 		data_to_be_reduced_global + block_offset,
@@ -840,7 +840,7 @@ void gpu_calc_energrad(
 	);
 
 	#ifdef SET_PVC_SPECIFIC
-	map_input_array(
+	transpose_matrix(
 		item_ct1,
 		tmp,
 		tmp_arranged
@@ -938,7 +938,7 @@ void gpu_calc_energrad(
 	#endif // DEBUG_XMX_INPUTS
 
 	#ifdef SET_PVC_SPECIFIC
-	map_input_array(
+	transpose_matrix(
 		item_ct1,
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
 		data_to_be_reduced_global + block_offset,
@@ -1009,7 +1009,7 @@ void gpu_calc_energrad(
 	);
 
 	#ifdef SET_PVC_SPECIFIC
-	map_input_array(
+	transpose_matrix(
 		item_ct1,
 		tmp,
 		tmp_arranged
