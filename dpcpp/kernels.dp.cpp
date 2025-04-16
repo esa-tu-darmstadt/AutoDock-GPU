@@ -364,7 +364,11 @@ void reduce_via_matrix_units (
 				#else
 				sycl::local_ptr<TA>(data_to_be_reduced + offset),
 				#endif
+				#ifdef SET_PVC_SPECIFIC
+				tK // Row-major -> stride is tK
+				#else
 				tM // Col-major -> stride is tM
+				#endif
 			);
 
 			joint_matrix_mad(sg, sub_V, sub_A, sub_P, sub_V);
@@ -389,7 +393,11 @@ void reduce_via_matrix_units (
 			sg,
 			sub_Q,
 			Q_data_mptr,
+			#ifdef SET_PVC_SPECIFIC
+			tK // Row-major -> stride is tK
+			#else
 			tM // Col-major -> stride is tM
+			#endif
 		);
 		#else
 		fill_Q(item, Q_data);
@@ -397,7 +405,11 @@ void reduce_via_matrix_units (
 			sg,
 			sub_Q,
 			sycl::local_ptr<TA>(Q_data),
+			#ifdef SET_PVC_SPECIFIC
+			tK // Row-major -> stride is tK
+			#else
 			tM // Col-major -> stride is tM
+			#endif
 		);
 		#endif
 
