@@ -800,7 +800,7 @@ void gpu_calc_energrad(
 			item_ct1,
 			#ifdef USE_GLOB_SPACE_XMX_INPUTS
 				#ifdef SET_PVC_SPECIFIC
-				"\ndata_to_be_reduced_global (row_major)",
+				"\ndata_to_be_reduced_global_arranged (row_major)",
 				data_to_be_reduced_global_arranged
 				#else
 				"\ndata_to_be_reduced_global (col_major)",
@@ -808,7 +808,7 @@ void gpu_calc_energrad(
 				#endif
 			#else
 				#ifdef SET_PVC_SPECIFIC
-				"\ndata_to_be_reduced (row_major)",
+				"\ndata_to_be_reduced_arranged (row_major)",
 				data_to_be_reduced_arranged
 				#else
 				"\ndata_to_be_reduced (col_major)",
@@ -878,7 +878,16 @@ void gpu_calc_energrad(
 	energy = tmp[3];
 	#endif
 
-	//print_reduced_values(item_ct1, "tx, ty, tz, e", tmp);
+	/*
+	print_reduced_values(
+		item_ct1, "tx, ty, tz, e",
+		#ifdef SET_PVC_SPECIFIC
+		tmp_arranged
+		#else
+		tmp
+		#endif
+	);
+	*/
 
 	/* Reduction using matrix units */
 #else
@@ -969,7 +978,7 @@ void gpu_calc_energrad(
 			item_ct1,
 			#ifdef USE_GLOB_SPACE_XMX_INPUTS
 				#ifdef SET_PVC_SPECIFIC
-				"\ndata_to_be_reduced_global (row_major)",
+				"\ndata_to_be_reduced_global_arranged (row_major)",
 				data_to_be_reduced_global_arranged
 				#else
 				"\ndata_to_be_reduced_global (col_major)",
@@ -977,7 +986,7 @@ void gpu_calc_energrad(
 				#endif
 			#else
 				#ifdef SET_PVC_SPECIFIC
-				"\ndata_to_be_reduced (row_major)",
+				"\ndata_to_be_reduced_arranged (row_major)",
 				data_to_be_reduced_arranged
 				#else
 				"\ndata_to_be_reduced (col_major)",
@@ -1045,7 +1054,16 @@ void gpu_calc_energrad(
 	gz = tmp[2];
 	#endif
 
-	//print_reduced_values(item_ct1, "gx, gy, gz", tmp);
+	/*
+	print_reduced_values(
+		item_ct1, "gx, gy, gz",
+		#ifdef SET_PVC_SPECIFIC
+		tmp_arranged
+		#else
+		tmp
+		#endif
+	);
+	*/
 
 	/* Reduction using matrix units */
 #else
