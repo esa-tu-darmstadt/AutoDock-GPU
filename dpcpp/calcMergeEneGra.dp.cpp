@@ -860,8 +860,12 @@ void gpu_calc_energrad(
 		layout::row_major
 		>(
 			item_ct1,
-			"\nreduced data (row_major)",
+			"\nreduced data",
+			#ifdef SET_PVC_SPECIFIC
+			tmp_arranged
+			#else
 			tmp
+			#endif
 		);
 	*/
 
@@ -1038,8 +1042,12 @@ void gpu_calc_energrad(
 		layout::row_major
 		>(
 			item_ct1,
-			"\nreduced data (row_major)",
+			"\nreduced data",
+			#ifdef SET_PVC_SPECIFIC
+			tmp_arranged
+			#else
 			tmp
+			#endif
 		);
 	*/
 
