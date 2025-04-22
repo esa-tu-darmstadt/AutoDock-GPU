@@ -520,7 +520,11 @@ void gpu_gradient_minAD(
 			#endif
 			sycl::local_accessor<bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
 		#endif
-		// TODO: add option for both global and local
+		// Output matrix defined as local-memory only.
+		// The global-memory alternative is not provided.
+		// The reason is that executions of the global-memory version:
+		// - On small devices, eventually fail due to insuficcient memory
+		// - On PVC, hang indefinetely with certain inputs (e.g., 2vaa)
 		sycl::local_accessor<float, 1> tmp(sycl::range<1>(4 * threads), cgh);
 		#ifdef SET_PVC_SPECIFIC
 		sycl::local_accessor<float, 1> tmp_arranged(sycl::range<1>(4 * threads), cgh);
