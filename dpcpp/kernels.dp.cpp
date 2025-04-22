@@ -64,7 +64,7 @@ namespace syclexp = sycl::ext::oneapi::experimental;
 //#define DEBUG_XMX_INPUTS_INDEX_MAP
 
 // If enabled, then using global memory instead of SLM for holding data-to-be-reduced
-#define USE_GLOB_SPACE_XMX_INPUTS
+//#define USE_GLOB_SPACE_XMX_INPUTS
 
 // Number of rows/cols of a submatrix: tM, tN, tK
 constexpr int tM = 16;
