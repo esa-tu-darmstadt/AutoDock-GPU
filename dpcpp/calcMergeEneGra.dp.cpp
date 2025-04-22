@@ -78,17 +78,17 @@ void gpu_calc_energrad(
 	/* Reduction using matrix units */
 	,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
-	bf16 *data_to_be_reduced_global,
+		bf16 *data_to_be_reduced_global,
 		#ifdef SET_PVC_SPECIFIC
 		bf16 *data_to_be_reduced_global_arranged,
 		#endif
-	bf16 *Q_data_global,
+		bf16 *Q_data_global,
 	#else
-	bf16 *data_to_be_reduced,
+		bf16 *data_to_be_reduced,
 		#ifdef SET_PVC_SPECIFIC
 		bf16 *data_to_be_reduced_arranged,
 		#endif
-	bf16 *Q_data,
+		bf16 *Q_data,
 	#endif
 	float *tmp
 	#ifdef SET_PVC_SPECIFIC
@@ -827,14 +827,14 @@ void gpu_calc_energrad(
 			#else
 			data_to_be_reduced_global,
 			#endif
-		Q_data_global,
+			Q_data_global,
 		#else
 			#ifdef SET_PVC_SPECIFIC
 			data_to_be_reduced_arranged,
 			#else
 			data_to_be_reduced,
 			#endif
-		Q_data,
+			Q_data,
 		#endif
 		tmp
 	);
@@ -1009,14 +1009,14 @@ void gpu_calc_energrad(
 			#else
 			data_to_be_reduced_global,
 			#endif
-		Q_data_global,
+			Q_data_global,
 		#else
 			#ifdef SET_PVC_SPECIFIC
 			data_to_be_reduced_arranged,
 			#else
 			data_to_be_reduced,
 			#endif
-		Q_data,
+			Q_data,
 		#endif
 		tmp
 	);

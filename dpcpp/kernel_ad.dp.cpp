@@ -76,17 +76,17 @@ gpu_gradient_minAD_kernel(
 	/* Reduction using matrix units */
 	,
 	#ifdef USE_GLOB_SPACE_XMX_INPUTS
-	bf16 *data_to_be_reduced_global,
+		bf16 *data_to_be_reduced_global,
 		#ifdef SET_PVC_SPECIFIC
 		bf16 *data_to_be_reduced_global_arranged,
 		#endif
-	bf16 *Q_data_global,
+		bf16 *Q_data_global,
 	#else
-	bf16 *data_to_be_reduced,
+		bf16 *data_to_be_reduced,
 		#ifdef SET_PVC_SPECIFIC
 		bf16 *data_to_be_reduced_arranged,
 		#endif
-	bf16 *Q_data,
+		bf16 *Q_data,
 	#endif
 	float *tmp
 	#ifdef SET_PVC_SPECIFIC
@@ -288,17 +288,17 @@ gpu_gradient_minAD_kernel(
 			/* Reduction using matrix units */
 			,
 			#ifdef USE_GLOB_SPACE_XMX_INPUTS
-			data_to_be_reduced_global,
+				data_to_be_reduced_global,
 				#ifdef SET_PVC_SPECIFIC
 				data_to_be_reduced_global_arranged,
 				#endif
-			Q_data_global,
+				Q_data_global,
 			#else
-			data_to_be_reduced,
+				data_to_be_reduced,
 				#ifdef SET_PVC_SPECIFIC
 				data_to_be_reduced_arranged,
 				#endif
-			Q_data,
+				Q_data,
 			#endif
 			tmp
 			#ifdef SET_PVC_SPECIFIC
@@ -505,20 +505,20 @@ void gpu_gradient_minAD(
 		#ifdef USE_XMX
 		/* Reduction using matrix units */
 		#ifdef USE_GLOB_SPACE_XMX_INPUTS
-		//Replacing "data_to_be_reduced" in SLM with
-		//data_to_be_reduced_global in global memory
-		int nelems_data_to_be_reduced = blocks * (4 * threads);
-		bf16 *data_to_be_reduced_global = sycl::malloc_device<bf16>(nelems_data_to_be_reduced, queue);
+			//Replacing "data_to_be_reduced" in SLM with
+			//data_to_be_reduced_global in global memory
+			int nelems_data_to_be_reduced = blocks * (4 * threads);
+			bf16 *data_to_be_reduced_global = sycl::malloc_device<bf16>(nelems_data_to_be_reduced, queue);
 			#ifdef SET_PVC_SPECIFIC
 			bf16 *data_to_be_reduced_global_arranged = sycl::malloc_device<bf16>(nelems_data_to_be_reduced, queue);
 			#endif
-		bf16* Q_data_global = sycl::malloc_device<bf16>(tM * tK, queue);
+			bf16* Q_data_global = sycl::malloc_device<bf16>(tM * tK, queue);
 		#else
-		sycl::local_accessor<bf16, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
+			sycl::local_accessor<bf16, 1> data_to_be_reduced(sycl::range<1>(4 * threads), cgh);
 			#ifdef SET_PVC_SPECIFIC
 			sycl::local_accessor<bf16, 1> data_to_be_reduced_arranged(sycl::range<1>(4 * threads), cgh);
 			#endif
-		sycl::local_accessor<bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
+			sycl::local_accessor<bf16, 1> Q_data(sycl::range<1>(tM * tK), cgh);
 		#endif
 		// TODO: add option for both global and local
 		sycl::local_accessor<float, 1> tmp(sycl::range<1>(4 * threads), cgh);
@@ -568,17 +568,17 @@ void gpu_gradient_minAD(
 					/* Reduction using matrix units */
 					,
 					#ifdef USE_GLOB_SPACE_XMX_INPUTS
-					data_to_be_reduced_global,
+						data_to_be_reduced_global,
 						#ifdef SET_PVC_SPECIFIC
 						data_to_be_reduced_global_arranged,
 						#endif
-					Q_data_global,
+						Q_data_global,
 					#else
-					data_to_be_reduced.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+						data_to_be_reduced.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 						#ifdef SET_PVC_SPECIFIC
 						data_to_be_reduced_arranged.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 						#endif
-					Q_data.template get_multi_ptr<sycl::access::decorated::yes>().get(),
+						Q_data.template get_multi_ptr<sycl::access::decorated::yes>().get(),
 					#endif
 					tmp.template get_multi_ptr<sycl::access::decorated::yes>().get()
 					#ifdef SET_PVC_SPECIFIC
